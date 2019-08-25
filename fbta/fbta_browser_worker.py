@@ -13,34 +13,29 @@ from selenium.webdriver.chrome.options import Options
 from fbta_browser_constant import FBTABrowserConstant
 from fbta_browser_title import FBTABrowserTitle
 from fbta_configs import FBTAConfigs
+from fbta_driver import FBTADriver
+from fbta_node_master import FBTANodeMaster
 from fbta_settings import FBTASettings
 from fbta_log import log
 
 
-class FBTANewBrowser(FBTABrowserTitle):
+class FBTAWorkerBrowser(FBTABrowserTitle):
     NONE = None
 
-    def __init__(self, duty: FBTABrowserConstant, settings: FBTASettings, configs: FBTAConfigs):
-        self.duty = duty
+    def __init__(self, node_master: FBTANodeMaster):
+        self.duty = FBTABrowserConstant.NODE_SLAVE
         FBTABrowserTitle.__init__(self)
-        self.__configs = configs
-        self.__settings = settings
+        self.__node_master = node_master
+        self.__configs = node_master.configs
+        self.__settings = node_master.settings
 
         self.__const_timeout_loadpage = 120
         self.name = self.__randomString(5)
 
         self.__test_end_killer = self.__settings.kill_driver_on_end
 
-        self.__chrome_options = Options()
-        # IF RUN IN MODE NO-JS CHROME USE 2
-        # self.__chrome_options.add_experimental_option("prefs",
-        #                                               {'profile.managed_default_content_settings.javascript': 0})
-        print(self.__configs.window_size_width, self.__configs.window_size_height)
 
-        self.__chrome_options.add_argument(
-            '--window-size={w},{h}'.format(w=self.__configs.window_size_width,
-                                           h=self.__configs.window_size_height))
-        self.__driver = None
+        self.__driver:FBTADriver = self.__start_driver()
 
         self.__use_noscript = True
 
@@ -48,30 +43,12 @@ class FBTANewBrowser(FBTABrowserTitle):
 
         self.__signal = FBTABrowserConstant.SIGNAL_NORMAL_START
 
+
     def start_browser(self):
-        self.__driver = self.__start_master_driver()
-
-    @property
-    def driver(self) -> webdriver.Chrome:
-        return self.__driver
-
-    @property
-    def name(self) -> str:
-        return self.__name
-
-    @name.setter
-    def name(self, name=None):
-        if name:
-            self.__name = name
-            self.__alway_check_masterduty_change_name()
-
-    @property
-    def fb_scope(self):
-        return self.__fb_scope_hidden
-
-    @fb_scope.setter
-    def fb_scope(self, scope: FBTABrowserConstant):
-        self.__fb_scope_hidden = scope
+        if self.__settings.init_node_master_browser:
+            self.__driver.add_cookie_from_node_master()
+        else:
+            self.__driver.add_cookie_from_file()
 
     def has_driver(self):
         return self.driver is not None
@@ -83,13 +60,9 @@ class FBTANewBrowser(FBTABrowserTitle):
     def use_no_script(self, use=True):
         self.__use_noscript = use
 
-    def __start_master_driver(self) -> webdriver.Chrome:
-        if self.__settings.use_nodeMaster:
-            driver = webdriver.Chrome(self.__settings.driver_path,
-                                      chrome_options=self.__chrome_options)
-            driver.implicitly_wait(self.__const_timeout_loadpage)
-        else:
-            driver = None
+    def __start_driver(self) -> FBTADriver:
+        driver = FBTADriver(self.__node_master)
+        driver.implicitly_wait(self.__const_timeout_loadpage)
         return driver
 
     def __check_internet_connect(self):
@@ -142,17 +115,7 @@ class FBTANewBrowser(FBTABrowserTitle):
 
             self.driver.refresh()
 
-    @property
-    def duty(self):
-        return self.__duty
 
-    @duty.setter
-    def duty(self, d: FBTABrowserConstant):
-        self.__duty = d
-
-    @property
-    def title(self) -> str:
-        return self.driver.title
 
     def save_cookies(self):
         file_name = self.__settings.dir_cookies + 'fbta_cookies.pkl'
@@ -182,36 +145,29 @@ class FBTANewBrowser(FBTABrowserTitle):
                 print(f':Browser: Random New Name [{self.name}]')
                 self.name = self.__randomString()
 
-    @property
-    def browser_is_master(self) -> bool:
-        self.__alway_check_masterduty_change_name()
-        return self.__is_master
 
-    @property
-    def login_signal(self):
-        self.__check_login()
-        return self.__signal
 
-    def __check_login(self):
-        self.__fb_scope, _ = self.check_login_type(self.__fb_scope)
-        title_status = self.check_title_status(self.__fb_scope)
-        self.__signal = title_status[1]
-        # print('\t\t\t\t',self.__signal)
 
-    def goto(self, url):
+
+    def goto(self, url, stream=False):
         self.__check_internet_connect()
-        self.__get_secure(url)
+        self.__get_secure(url,stream)
         self.__check_login()
         self.__handle_noscript(url)
 
-    def __get_secure(self, url):
+    def __get_secure(self, url, stream=False):
         load_time_out_retry = 0
+        main_url = self.__node_master.url.getUrlFacebook()
+        if main_url not in url:
+            url_new = self.__node_master.url.getUrlWithMain(url)
+        else:
+            url_new = url
         while True:
             if load_time_out_retry > 10:
                 print(f':Browser: More retry use timeout')
                 break
             try:
-                self.driver.get(url)
+                self.driver.get(url_new, stream=stream)
                 self.driver.set_page_load_timeout(30)
                 break
             except  TimeoutException as e:
@@ -226,10 +182,56 @@ class FBTANewBrowser(FBTABrowserTitle):
         except Exception as e:
             log(f':Browser: [{self.name}] Driver Kill Error as {e}')
 
+    def __del__(self):
+        if self.__test_end_killer:
+            self.killdriver()
+
+    @property
+    def driver(self) -> FBTADriver:
+        return self.__driver
+
+    @property
+    def name(self) -> str:
+        return self.__name
+
+    @name.setter
+    def name(self, name=None):
+        if name:
+            self.__name = name
+            self.__alway_check_masterduty_change_name()
+
+    @property
+    def fb_scope(self):
+        return self.__fb_scope_hidden
+
+    @fb_scope.setter
+    def fb_scope(self, scope: FBTABrowserConstant):
+        self.__fb_scope_hidden = scope
+
     @property
     def __is_master(self):
         return self.duty == FBTABrowserConstant.NODE_MASTER
 
-    def __del__(self):
-        if self.__test_end_killer:
-            self.killdriver()
+    @property
+    def duty(self):
+        return self.__duty
+
+    @duty.setter
+    def duty(self, d: FBTABrowserConstant):
+        self.__duty = d
+
+    @property
+    def title(self) -> str:
+        return self.driver.title
+
+    @property
+    def browser_is_master(self) -> bool:
+        self.__alway_check_masterduty_change_name()
+        return self.__is_master
+
+    @property
+    def login_signal(self):
+        self.__check_login()
+        return self.__signal
+
+

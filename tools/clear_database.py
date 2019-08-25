@@ -23,5 +23,5 @@ if __name__ == '__main__':
     \(> w <)/ Clean them all Woho!
     /!\ WARNNING: Another your Database will delete
     """
-    except_db_list = ['fbta_20190619_0031', 'fbta_20190702_0058']
+    except_db_list = ['fbta_20190619_0031', 'fbta_20190702_0058','fbta_20190824_1839']
     drop_except_in_list(except_db_list)

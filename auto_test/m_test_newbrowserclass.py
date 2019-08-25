@@ -1,4 +1,4 @@
-from fbta_browser import FBTANewBrowser
+from fbta_browser_selenium import FBTANewBrowser
 from fbta_browser_constant import FBTABrowserConstant
 from fbta_configs import FBTAConfigs
 from fbta_settings import FBTASettings
