@@ -30,7 +30,32 @@ class FBTAWorkerBrowserS(FBTAMainBrowser):
 
         self.__driver: FBTADriver = self._start_driver()
 
+    def _check_internet_connect(self):
+        return True
 
+    def goto(self, url, stream=False):
+        ret = self._get_secure(url, stream)
+        if ret.encoding is not None:
+            self._handle_status_to_process()
+        self._handle_noscript(url)
+        return ret
+
+    def _get_secure(self, url, stream=False):
+        load_time_out_retry = 0
+        url_new = self._get_new_url(url)
+        ret = 'NoContent'
+
+        while True:
+            if load_time_out_retry > 10:
+                print(f':Browser: More retry use timeout')
+                break
+            try:
+                return self._driver_get(url_new, stream)
+            except TimeoutException as e:
+                print(f':Browser: [{self.name}] Get method timeout retry={load_time_out_retry}')
+                sleep(30)
+                load_time_out_retry += 1
+        return ret
 
     def start_browser(self):
         if self._settings.init_node_master_browser:
@@ -61,13 +86,31 @@ class FBTAWorkerBrowserS(FBTAMainBrowser):
     def _get_new_url(self, url):
         main_url = self.__node_master.url.getUrlFacebook()
         if main_url not in url:
-            url_new = self.__node_master.url.getUrlWithMain(url)
+            if 'http' not in url[:8]:
+                url_new = self.__node_master.url.getUrlWithMain(url)
+            else:
+                url_new = url
+
         else:
             url_new = url
         return url_new
 
     def _driver_get(self, url, stream=False):
-        self.driver.get(url, stream=stream)
+        tryagine_count = 0
+        ret = 'browserNoContent'
+
+        while True:
+            if tryagine_count >= 50:
+                print(f':wBrowser: {self.name} Very tried see you x_x')
+                break
+            try:
+                return self.driver.get(url, stream=stream)
+            except requests.ConnectionError:
+                print(f':wBrowser: {self.name} Disconnect Tryagin={tryagine_count}')
+                tryagine_count += 1
+                sleep(30)
+
+        return ret
 
     @property
     def driver(self) -> FBTADriver:

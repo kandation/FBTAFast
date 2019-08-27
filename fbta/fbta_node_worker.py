@@ -11,7 +11,7 @@ from fbta_url import FBTAUrl
 from fbta_log import log
 
 
-class FBTANodeSlave:
+class FBTANodeWorker:
     NONE = None
 
     def __init__(self, slave_name: str, node_master: FBTANodeMaster):
@@ -53,19 +53,26 @@ class FBTANodeSlave:
             self.browser.goto(self.__node_master.url.getUrlFacebook())
 
     def goto_Secure(self, url):
+        try_loop = 0
         while True:
             self.browser.goto(url)
-            if not self.browser.login_signal:
+            if not self.browser.has_signal or try_loop > 15:
                 break
-            self.__siteErrorHandling(url)
+            self.__siteErrorHandling(url, try_loop)
         return True
 
-    def __siteErrorHandling(self, url):
+    def __siteErrorHandling(self, url, try_loop):
         self.browser.fb_scope = self.__fbscrope
         if self.browser.login_signal:
             self.__node_master.slave_call_master_new_login(self, url)
-        else:
-            print(f':Slave: SiteErrorStatus [{self.browser.login_signal}]')
+            try_loop = 0
+        if self.browser.signal_reload_content:
+            log(':slave: Reload Content')
+            sleep(10)
+            try_loop += 1
+        if self.browser.signal_restart_browser:
+            raise Exception('Kill Browser by exception for new instance browser')
+
 
     def screenshot_by_id(self, element_id: str, file_name: str, sub_dir=None):
         pass

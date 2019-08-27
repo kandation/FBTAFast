@@ -14,7 +14,7 @@ class FBTAHistoryDownloadWorker(FBTAMainWorker):
         self.__activity: FBTAHistoryDownloaderMethod = FBTAHistoryDownloaderMethod.NONE
 
     def after_init(self):
-        self.__activity = FBTAHistoryDownloaderMethod(self.__node_master, self.worker_browser, self.__db)
+        self.__activity = FBTAHistoryDownloaderMethod(self.__node_master, self.node_worker, self.__db)
         self.__activity.slave_name = self.name
 
     def slave_method(self, docs):
@@ -23,14 +23,14 @@ class FBTAHistoryDownloadWorker(FBTAMainWorker):
         print(f':History_Worker:\t\t[{self.name}] WORK [{docs["_id"]}] finished [{self.browser.title}]')
 
     def __activity_download(self, url):
-        self.worker_browser.goto_Secure(url)
+        self.node_worker.goto_Secure(url)
         pageCounter = 0
         while True:
             print(self.name, self.__activity.hasTimeline())
             if self.__activity.hasTimeline():
                 if self.__activity.getPage_NextMoreLoad(True, self.name):
                     self.__activity.addPageToDb()
-                    ss = self.worker_browser.screenshot_fullpage(self.__activity.page['title'], self.configs.dir_seq_01_Activity)
+                    ss = self.node_worker.screenshot_fullpage(self.__activity.page['title'], self.configs.dir_seq_01_Activity)
                     if ss:
                         self.stat.add_stat('hdw_screenshot_success')
                     else:
@@ -45,7 +45,7 @@ class FBTAHistoryDownloadWorker(FBTAMainWorker):
                 break
 
             if self.__activity.checkIsShouldGoing():
-                self.worker_browser.goto_Secure(self.__activity.getNextUrl())
+                self.node_worker.goto_Secure(self.__activity.getNextUrl())
             else:
                 log(f':History_Worker: ✖✖✖ [{self.name}] Break Because time least than settings')
                 break

@@ -6,7 +6,7 @@ from fbta_global_database_manager import FBTADBManager
 from fbta_node_master import FBTANodeMaster
 from urllib.parse import parse_qs
 
-from fbta_node_slave import FBTANodeSlave
+from fbta_node_worker import FBTANodeWorker
 from fbta_log import log
 
 
@@ -17,7 +17,7 @@ class FBTAHistoryDownloaderMethod:
     but now it include in 'fbta_03_history_download_manager.py'
     """
 
-    def __init__(self, node_master: FBTANodeMaster, worker_browser: FBTANodeSlave, db: FBTADBManager):
+    def __init__(self, node_master: FBTANodeMaster, worker_browser: FBTANodeWorker, db: FBTADBManager):
         self.__worker_driver = worker_browser.browser.driver
         self.db = db
         self.node_master = node_master

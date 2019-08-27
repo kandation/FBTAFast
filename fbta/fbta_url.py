@@ -4,6 +4,7 @@ from fbta_settings import FBTASettings
 
 class FBTAUrl:
     NONE = None
+
     def __init__(self, settings: FBTASettings, global_configs: FBTAConfigs):
         self.configsClass = global_configs
         self.settingsClass = settings
@@ -44,4 +45,5 @@ class FBTAUrl:
         return self.__getUrlList('profile')
 
     def getUrlWithMain(self, url: str) -> str:
-        return self.__getMainUrl() + str(url)
+        prefix = '' if url and url[0] == '/' else '/'
+        return self.__getMainUrl() + prefix + str(url)

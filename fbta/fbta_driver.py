@@ -25,11 +25,21 @@ class FBTADriver:
     def start_session(self):
         self.add_cookie_from_node_master()
 
-    def get(self, url, stream=False):
+    @property
+    def session(self) -> requests.Session():
+        return self._session
+
+    def get(self, url, stream=False) -> requests.Response:
         print(f'>> :Driver: stream={stream} get {url} ')
-        self._respond = self._session.get(url,stream=stream, allow_redirects=True)
-        self.__soup = BeautifulSoup(self._respond.content, 'lxml')
-        self.__selector = Selector(self._respond.text)
+        self._respond = self._session.get(url, stream=stream, allow_redirects=True)
+        if self._respond.encoding is not None:
+            self.__soup = BeautifulSoup(self._respond.content, 'lxml')
+            self.__selector = Selector(self._respond.text)
+        else:
+            self.__soup = None
+            self.__selector = None
+
+        return self._respond
 
     def get_stream(self, url):
         self._respond = self._session.get(url, allow_redirects=True)
@@ -66,8 +76,6 @@ class FBTADriver:
     def add_cookie(self, cookie):
         for key in cookie:
             self._session.cookies.set(str(key), str(cookie[key]))
-
-
 
     def get_cookies(self):
         ret = []

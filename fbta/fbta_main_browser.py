@@ -60,33 +60,14 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
     def _start_driver(self) -> webdriver.Chrome:
         pass
 
-    def __check_internet_connect(self):
-        url = 'https://gist.githubusercontent.com/kandation/df77802e4ba542a20d2d92bfeea45a5d/raw/00fb580a14ec12087acf8e3ab2276f5b9a25115d/private_internet_connect_check.txt'
-        timeout = 10
-        retry = 0
-        while True:
-            try:
-                k = requests.get(url, timeout=timeout)
-                if k.text == 'GGEZNOOBINTERNETCONNECT':
-                    return True
-            except requests.ConnectionError:
-                log(f':Browser: [{self.name}] Internet Not Connected@retry={retry}')
-                retry += 1
-                sleep(self._configs.time_retry_connectError)
-            except Exception as e:
-                log(f':Browser: [{self.name}] Internet Check Error = {e}')
-                sleep(5)
-
-            if retry == 100:
-                log(f':Browser: [{self.name}] Internet NotConnect Giveup with retry {retry}')
-                break
-        return False
-
+    @abstractmethod
+    def _check_internet_connect(self):
+        pass
     def __has_browser_noscript(self):
         is_noscript = True if self.driver.get_cookie('noscript') is not None else False
         return is_noscript
 
-    def __handle_noscript(self, url):
+    def _handle_noscript(self, url):
         if self.__use_noscript:
             self.__handle_noscript_use_noscript(url)
         else:
@@ -99,11 +80,12 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
             retry_addcookie = 50
             while retry_addcookie > 0:
                 try:
+                    print('browser ADDDDDDDDDDDDDDDDDD NOSCRIPT')
                     self.driver.add_cookie({'name': 'noscript', 'value': '1'})
                     break
                 except:
                     sleep(self._configs.time_retry_addCookie)
-                    if not self.__check_internet_connect():
+                    if not self._check_internet_connect():
                         retry_addcookie -= 1
                     else:
                         self.__get_secure(url)
@@ -133,7 +115,7 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
     def __update_fb_scope(self):
         self.__fb_scope, _ = self.check_login_type(self.__fb_scope)
 
-    def __handle_status_to_process(self):
+    def _handle_status_to_process(self):
         self.__update_status()
         self.__update_fb_scope()
         if self.__title_status == FBTABrowserConstant.STATUS_NORMAL:
@@ -151,10 +133,10 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
         self.__signal_reload_content = reload
 
     def goto(self, url, stream=False):
-        self.__check_internet_connect()
+        self._check_internet_connect()
         self.__get_secure(url, stream)
-        self.__handle_status_to_process()
-        self.__handle_noscript(url)
+        self._handle_status_to_process()
+        self._handle_noscript(url)
 
     def __get_secure(self, url, stream=False):
         load_time_out_retry = 0
@@ -225,8 +207,12 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
         return self.__is_master
 
     @property
+    def has_signal(self)->bool:
+        return any([self.__signal_login,self.__signal_reload_content, self.__signal_need_restart_browser])
+
+    @property
     def login_signal(self) -> bool:
-        self.__handle_status_to_process()
+        self._handle_status_to_process()
         return self.__signal_login
 
     @property

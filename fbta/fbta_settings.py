@@ -13,7 +13,7 @@ class FBTASettings:
         self.init_node_master_browser = True
         self.dir_data_path = './'
         self.username = username
-        self.cluster_limit = 15
+        self.cluster_limit = 50
         self.cluster_num = 4
         self.__db_prefix = 'fbta'
         self.db_name = None

@@ -8,7 +8,7 @@ import pymongo
 from selenium.common.exceptions import WebDriverException
 
 from fbta_node_master import FBTANodeMaster
-from fbta_node_slave import FBTANodeSlave
+from fbta_node_worker import FBTANodeWorker
 from fbta_statistic import FBTAStatistic
 from fbta_log import log
 
@@ -56,8 +56,6 @@ class FBTAVariableDownload:
         return bool(self.doc)
 
 
-
-
 class FBTAMainWorker(Thread, metaclass=ABCMeta):
     NONE = None
 
@@ -71,7 +69,7 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
 
         Thread.__init__(self)
 
-        self.__slave_browser: FBTANodeSlave = FBTANodeSlave.NONE
+        self.__node_worker: FBTANodeWorker = FBTANodeWorker.NONE
         self.download_current = FBTAVariableDownload()
 
         self.__stat = FBTAStatistic()
@@ -105,12 +103,12 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
         return self.__settings
 
     @property
-    def worker_browser(self) -> FBTANodeSlave:
-        return self.__slave_browser
+    def node_worker(self) -> FBTANodeWorker:
+        return self.__node_worker
 
     @property
     def browser(self):
-        return self.__slave_browser.browser
+        return self.__node_worker.browser
 
     @property
     def slave_class_name(self):
@@ -172,7 +170,6 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
         while True:
             if try_agin > 10:
                 break
-
             try:
                 self.__init_browser()
                 ret = True
@@ -194,7 +191,7 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
         self.__stat.worker_browser_died += 1
 
         try:
-            del self.__slave_browser
+            del self.__node_worker
         except:
             pass
 
@@ -306,12 +303,12 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
     def killBrowser(self):
         log(f':mWorker: [{self.name}] start KILL Driver')
         try:
-            self.__slave_browser.browser.killdriver()
+            self.__node_worker.browser.killdriver()
         except:
             log(f'mWorker: [{self.name}] Kill driver  Error but no problem')
 
         try:
-            del self.__slave_browser
+            del self.__node_worker
         except:
             log(f':mWorker: [{self.name}] Delete WORKER_BROWSER_ERROR')
 
@@ -323,9 +320,9 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
         pass
 
     def __init_browser(self):
-        self.__slave_browser = FBTANodeSlave(self.name, self.__masterNode)
+        self.__node_worker = FBTANodeWorker(self.name, self.__masterNode)
         if self.settings.use_nodeSlave:
-            self.__slave_browser.browser.use_no_script(True)
-            self.__slave_browser.browser.name = self.name
-            self.__slave_browser.setFBScope(0)
-            self.__slave_browser.run()
+            self.__node_worker.browser.use_no_script(True)
+            self.__node_worker.browser.name = self.name
+            self.__node_worker.setFBScope(0)
+            self.__node_worker.run()

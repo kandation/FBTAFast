@@ -34,7 +34,27 @@ class FBTABrowserSelenium(FBTAMainBrowser):
 
         self.__driver = None
 
+    def _check_internet_connect(self):
+        url = 'https://gist.githubusercontent.com/kandation/df77802e4ba542a20d2d92bfeea45a5d/raw/00fb580a14ec12087acf8e3ab2276f5b9a25115d/private_internet_connect_check.txt'
+        timeout = 10
+        retry = 0
+        while True:
+            try:
+                k = requests.get(url, timeout=timeout)
+                if k.text == 'GGEZNOOBINTERNETCONNECT':
+                    return True
+            except requests.ConnectionError:
+                log(f':Browser: [{self.name}] Internet Not Connected@retry={retry}')
+                retry += 1
+                sleep(self._configs.time_retry_connectError)
+            except Exception as e:
+                log(f':Browser: [{self.name}] Internet Check Error = {e}')
+                sleep(5)
 
+            if retry == 100:
+                log(f':Browser: [{self.name}] Internet NotConnect Giveup with retry {retry}')
+                break
+        return False
 
     @property
     def driver(self) -> webdriver.Chrome:

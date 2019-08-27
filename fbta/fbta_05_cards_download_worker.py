@@ -14,7 +14,7 @@ class FBTACardsDownloadWorker(FBTAMainWorker):
         self.__activity: FBTAHistoryDownloaderMethod = FBTAHistoryDownloaderMethod.NONE
 
     def after_init(self):
-        self.__activity = FBTAHistoryDownloaderMethod(self.__node_master, self.worker_browser, self.__db)
+        self.__activity = FBTAHistoryDownloaderMethod(self.__node_master, self.node_worker, self.__db)
         self.__activity.slave_name = self.name
 
     def slave_method(self, docs):
@@ -26,13 +26,13 @@ class FBTACardsDownloadWorker(FBTAMainWorker):
         url = docs.get('main-link')
 
         if url != '#':
-            self.worker_browser.goto_Secure(url)
-            log('>>>>', self.name, docs.get('_id'), self.worker_browser.browser.driver.title)
+            self.node_worker.goto_Secure(url)
+            log('>>>>', self.name, docs.get('_id'), self.node_worker.browser.driver.title)
 
             data = {
                 'history-cluster-id': str(docs.get('history-cluster-id')) + ',' + str(self.name),
                 'url': url,
-                'source': str(self.worker_browser.browser.driver.page_source),
+                'source': str(self.node_worker.browser.driver.page_source),
                 'refer-id': docs.get('_id'),
                 'old-data': docs
             }

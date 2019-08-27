@@ -151,6 +151,7 @@ class FBTAMainManager(metaclass=ABCMeta):
                f"\t>> TimeNow  : {time.time()} ({datetime.datetime.now()})\n"
                f"\t>> Loopshow : {loop_time}   \n"
                f"\t>> FromStart: {FBTADifftime.printTimeDiff(self.__stat.history_time_global_start)}   \n"
+               f"\t>> waiting  : {len(self.db.docs_list_waiting)}\n"
                f"-----------------------\n"
                )
 
