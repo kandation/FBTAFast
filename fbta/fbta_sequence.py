@@ -88,7 +88,7 @@ class FBTASequence(FBTASequenceFunction):
     def __p04_processDatabaseAsCard(self, step):
         if self._isInTestStep(step):
             analysis = FBTAActivityToCardsNew(self._settings, self._configs)
-            analysis.run()
+            analysis.main()
 
     def __p05_processCardAsPost(self, step):
         if self._isInTestStep(step):

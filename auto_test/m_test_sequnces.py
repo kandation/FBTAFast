@@ -12,18 +12,21 @@ if __name__ == '__main__':
     settings.dir_save_path = r'./save/'
     settings.use_nodeMaster_loadCookie = True
     settings.use_nodeMaster = True
-    settings.init_node_master_browser = True
+    settings.init_node_master_browser = False
     settings.cluster_num = 50
     settings.cluster_limit = 50
 
-    settings.renew_index = True
+    settings.renew_index = False
     settings.fast_worker = True
     # settings.date_process = [2018, 7, 1]
     # settings.date_process = [2018, 7, 1]
     settings.dir_path_detail = settings.DIR_DETAIL_NEW_ALL_RUN
-    # settings.db_name = 'fbta_20190827_1544'
+    settings.db_name = 'fbta_20190827_1544'
+    # db = client.get_database('fbta_20190827_1544')
+    # db = client.get_database('fbta_20190619_0031')
+    # db = client.get_database('fbta_20190827_2027')
 
-    settings.test_step = [0,1,2,3]
+    settings.test_step = [0,4]
 
     seq = FBTASequence(settings, configs)
     seq.start()

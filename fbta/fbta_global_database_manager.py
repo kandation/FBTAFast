@@ -67,6 +67,9 @@ class FBTADBManager:
         log(f':DBMange: \t■■■■■■■ DB Load with startPage=[{start}] to [{start + length - 1}] with[{length}]')
         return self.__currentCollection.find(no_cursor_timeout=True).skip(start).limit(length)
 
+    def getCurrentDocs(self):
+        return self.__currentCollection.find(no_cursor_timeout=True)
+
     def current_insert_one(self, data: dict):
         return self.__currentCollection.insert_one(data)
 
