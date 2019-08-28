@@ -2,6 +2,7 @@ import time
 from pprint import pprint
 
 from fbta_04_activity_to_card import FBTAActivityToCards
+from fbta_04_activity_to_card_new import FBTAActivityToCardsNew
 from fbta_05_cards_download_manager import FBTACardsDownloadManager
 from fbta_02_clusters import FBTAClusterInfo
 from fbta_06_photos_download_manager import FBTAPhotosDownloadManager
@@ -86,7 +87,7 @@ class FBTASequence(FBTASequenceFunction):
 
     def __p04_processDatabaseAsCard(self, step):
         if self._isInTestStep(step):
-            analysis = FBTAActivityToCards(self._settings, self._configs)
+            analysis = FBTAActivityToCardsNew(self._settings, self._configs)
             analysis.run()
 
     def __p05_processCardAsPost(self, step):

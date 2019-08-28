@@ -10,7 +10,7 @@ import threading
 import logging
 
 
-class FBTAActivityToCards:
+class FBTAActivityToCardsNew:
     """
     export to MongoDB as card with format (all not None)
     'main-link' -> str,
@@ -39,18 +39,18 @@ class FBTAActivityToCards:
         self.cardCollection = self.db.get_collection(self.__configsClass.db_collection_02_card_name)
 
     def run(self):
-        self.__analysis_dbFind()
+        self.__analysis_db_find()
 
-    def __analysis_dbFind(self):
-        startTImeAnalysis = time.time()
-        log('Analysis start@', startTImeAnalysis)
+    def __analysis_db_find(self):
+        start_time_analysis = time.time()
+        log('Analysis start@', start_time_analysis)
         docs = self.dataCollection.find()
 
         self.__slave_parsing(docs)
 
-        endTimeAnalysis = time.time()
-        diffTimeAnalysis = endTimeAnalysis - startTImeAnalysis
-        log('Analysis Stop@', endTimeAnalysis, 'Diff@', diffTimeAnalysis)
+        end_time_analysis = time.time()
+        diff_time_analysis = end_time_analysis - start_time_analysis
+        log('Analysis Stop@', end_time_analysis, 'Diff@', diff_time_analysis)
 
     def __slave_parsing(self, docs):
         """
@@ -70,16 +70,16 @@ class FBTAActivityToCards:
         countDocs = 0
         startTime = time.time()
         log('Start Analysis Assign @', datetime.datetime.fromtimestamp(startTime))
-        # self.typeList = self.__getTypeList()
+        self.typeList = self.__getTypeList()
 
-        for page in docs:
-            soup = BeautifulSoup(page['source'], 'html.parser')
+        for doc in docs:
+            soup = BeautifulSoup(doc['source'], 'html.parser')
 
             tlunit = soup.findAll('div', id=re.compile('^tlUnit_'))
 
             log('TLUnit Len' + str(len(tlunit)))
 
-            self.__slave_parsing_tlunit(page, tlunit)
+            self.__slave_parsing_tlunit(doc, tlunit)
             countDocs += 1
 
         endTime = time.time()
@@ -104,6 +104,7 @@ class FBTAActivityToCards:
                 cardData['cid'] = self.countCard
                 cardData['date'] = units_date
                 cardData['timestamp'] = unit_timestamp
+                cardData['raw-docs'] = page
 
                 self.countCard += 1
                 self.__insert2Db_card(cardData)
@@ -186,40 +187,40 @@ class FBTAActivityToCards:
                     }
                     return headerPage
 
-    # def __getTypeList(self):
-    #     """
-    #              1 = Owener(subject)
-    #              2 = verb/Action
-    #              3 = Another(subject)
-    #              4 = Object
-    #              5 = source(object)
-    #              sp = spacial case (One tag can be more types)
-    #              dx = dont interest
-    #              ev = event (not parsing but interrest)
-    #
-    #             """
-    #     dd = {
-    #         '124': ['shared', 'posted in', 'via', 'reviewed', 'subscribed', 'was at', 'uploaded', 'going to'],
-    #         '1234': ['likes', 'commented', 'replied', 'reacted', 'liked', 'was tagged', 'voted'],
-    #         '12435': ['saved'],
-    #         '1': ['updated', 'was live', 'approved', 'published', 'using', 'edited', 'changed'],
-    #         '123': ['replied', 'wrote on', 'followed', 'mentioned', 'became', 'is with', 'was with', 'is at', 'sent',
-    #                 'poked'],
-    #         'sp': ['added', 'feeling', 'created'],
-    #         'dx': ['played', 'breeding', 'evolved', 'took', 'earned', 'new high score', 'celebrating', 'solved'],
-    #         'ev': ['interested', 'watching', 'was playing']
-    #     }
-    #     tn = []
-    #     for k, val in dd.items():
-    #         for v in val:
-    #             tn.append((v, k))
-    #     return tn
+    def __getTypeList(self):
+        """
+                 1 = Owener(subject)
+                 2 = verb/Action
+                 3 = Another(subject)
+                 4 = Object
+                 5 = source(object)
+                 sp = spacial case (One tag can be more types)
+                 dx = dont interest
+                 ev = event (not parsing but interrest)
 
-    # def __card_type_condition(self, header):
-    #     for tp in self.typeList:
-    #         if tp[0] in header.text:
-    #             return tp
-    #     return ('0', '0')
+                """
+        dd = {
+            '124': ['shared', 'posted in', 'via', 'reviewed', 'subscribed', 'was at', 'uploaded', 'going to'],
+            '1234': ['likes', 'commented', 'replied', 'reacted', 'liked', 'was tagged', 'voted'],
+            '12435': ['saved'],
+            '1': ['updated', 'was live', 'approved', 'published', 'using', 'edited', 'changed'],
+            '123': ['replied', 'wrote on', 'followed', 'mentioned', 'became', 'is with', 'was with', 'is at', 'sent',
+                    'poked'],
+            'sp': ['added', 'feeling', 'created'],
+            'dx': ['played', 'breeding', 'evolved', 'took', 'earned', 'new high score', 'celebrating', 'solved'],
+            'ev': ['interested', 'watching', 'was playing']
+        }
+        tn = []
+        for k, val in dd.items():
+            for v in val:
+                tn.append((v, k))
+        return tn
+
+    def __card_type_condition(self, header):
+        for tp in self.typeList:
+            if tp[0] in header.text:
+                return tp
+        return ('0', '0')
 
     def __card_processing_header_findLinkAll(self, card_type, header):
         '''{sub}{cmd}{owner}{object}'''
@@ -228,10 +229,10 @@ class FBTAActivityToCards:
         header_link_all = self.__card_header_classify_link(alinks_in_header)
         return header_link_all
 
-    # def __card_type_check_realType(self, oldType, links):
-    #     thinking_type = {
-    #         'likes': ['13']
-    #     }
+    def __card_type_check_realType(self, oldType, links):
+        thinking_type = {
+            'likes': ['13']
+        }
 
     def __card_processing_header_typeLengthCheck(self, card_type, links):
         return len(card_type) == len(links)
