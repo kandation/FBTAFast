@@ -1,259 +1,199 @@
-from pymongo import MongoClient
-from bs4 import BeautifulSoup
 import re
-import time, datetime
 
 from fbta_configs import FBTAConfigs
+from fbta_global_database_manager import FBTADBManager
 from fbta_settings import FBTASettings
 from fbta_log import log
-import threading
-import logging
+
+from typing import List, Optional
+
+from parsel import Selector
+from lxml import etree, html
+import html as html_url
+
+import datetime
 
 
-class FBTAActivityToCards:
-    """
-    export to MongoDB as card with format (all not None)
-    'main-link' -> str,
-    'header' -> dict
-    'header' -> 'card-type' -> str,
-    'header' -> 'header-links' -> list
-    'header' -> 'header-links' -> [n] -> {text','uri'}
-    'content' ->  dict,
-    'content' -> 'content-html' -> str
-    'content' -> 'content-text' -> str
-    'content' -> privacy' -> str
-    'raw' -> str
-    'cid' -> int
-    """
-
+class FBTAActivityToCardsNew:
     def __init__(self, settings: FBTASettings, configs: FBTAConfigs):
-        self.__settingsClass = settings
-        self.__configsClass = configs
+        list_collection = [
+            configs.db_collection_01_page_name,
+            configs.db_collection_02_card_name]
+        self.db = FBTADBManager(settings.db_name, list_collection, configs.db_collection_stat)
 
-        self.dbName = self.__settingsClass.db_name
-        self.client = MongoClient()
-        self.db = self.client[self.dbName]
+        self.time_start = datetime.datetime.now()
+        self.__data_cid = 0
 
-        self.dataCollection = self.db.get_collection(self.__configsClass.db_collection_01_page_name)
+    def main(self):
+        self.__main_run()
+        log(f':Act2Card: Finished as {self.__data_cid} cards')
 
-        self.cardCollection = self.db.get_collection(self.__configsClass.db_collection_02_card_name)
+    def __main_run(self):
+        q_docs = self.db.getCurrentDocs()
+        log(f':Act2Card: Has {q_docs.count()} pages')
 
-    def run(self):
-        self.__analysis_dbFind()
+        for doc in q_docs:
+            bs = Selector(doc.get('source', ''))
+            tlunits: List[Optional[Selector]] = bs.css("div[id^=tlRecentStories_]")
+            log(f':Act2Card:------------ [{self.__data_cid}] TLUnit = {len(tlunits)} ------------')
 
-    def __analysis_dbFind(self):
-        startTImeAnalysis = time.time()
-        log('Analysis start@', startTImeAnalysis)
-        docs = self.dataCollection.find()
+            for tlstory in tlunits:
+                unit_timestamp = self.tlstory_get_date(tlstory)
+                date_tl = datetime.datetime.fromtimestamp(unit_timestamp)
+                log(f':Act2Card:\tDate = {date_tl}')
 
-        self.__slave_parsing(docs)
+                cards: List[Optional[Selector]] = tlstory.xpath('./div/div')
 
-        endTimeAnalysis = time.time()
-        diffTimeAnalysis = endTimeAnalysis - startTImeAnalysis
-        log('Analysis Stop@', endTimeAnalysis, 'Diff@', diffTimeAnalysis)
+                for card in cards:
+                    mainlink = self.parsing_mainlink(card)
+                    headers = self.parsing_header(card)
+                    contents = self.parsing_content(card, doc['_id'])
 
-    def __slave_parsing(self, docs):
-        """
-        MongoDB --> Documents -> Pages
-        Page is a Facebook Activity All
-            Page
-            |-<tlUnit_>
-            ...|--<tlRecentStories_>
-            ......|--<card><card><card>...<card>
+                    data = {
+                        'cid': self.__data_cid,
+                        'time-process': int(datetime.datetime.utcnow().timestamp()),
+                        'time-timeline': int(unit_timestamp),
+                        'ref-id': doc.get('_id', ''),
+                        'history-cluster-id': doc.get('history-cluster-id', ''),
+                        'main-link': mainlink,
+                        'header': headers,
+                        'contents': contents,
+                        'raw': html_url.unescape(card.get()),
+                        'raw-docs': {
+                            '_id': doc.get('_id', ''),
+                            'url': doc.get('current-url', ''),
+                            'title': doc.get('title', ''),
+                            'created': doc.get('create', ''),
+                        }
+                    }
+                    self.__data_cid += 1
 
-        <card>
-            <mainLink=[has/dont Has]
-            <h3><a>Subject</a></h3>
-            <content>
-        """
-        self.countCard = 0
-        countDocs = 0
-        startTime = time.time()
-        log('Start Analysis Assign @', datetime.datetime.fromtimestamp(startTime))
-        # self.typeList = self.__getTypeList()
+                    if self.__try_insert_db(data):
+                        pass
+                        # log(f':Act2Card:\t\tInsert {self.__data_cid} OK')
+                    else:
+                        log(f':Act2Card:\t\t> Insert problem {self.__data_cid}')
 
-        for page in docs:
-            soup = BeautifulSoup(page['source'], 'html.parser')
-
-            tlunit = soup.findAll('div', id=re.compile('^tlUnit_'))
-
-            log('TLUnit Len' + str(len(tlunit)))
-
-            self.__slave_parsing_tlunit(page, tlunit)
-            countDocs += 1
-
-        endTime = time.time()
-        diff = endTime - startTime
-        log('Complted Analysis with', countDocs, 'End@', endTime, 'diff@', diff)
-
-    def __slave_parsing_tlunit(self, page, tlunit):
-        for units in tlunit:
-            tlUnit_date_list = str(units.get('id')).replace('tlUnit_', '').split('_')
-            (tlUnit_month, tlUnit_day, tlUnit_year) = tlUnit_date_list
-
-            units_date = [int('20' + str(tlUnit_year)), int(tlUnit_month), int(tlUnit_day)]
-            units_datetime = datetime.datetime(units_date[0], units_date[1], units_date[2])
-            unit_timestamp = units_datetime.timestamp()
-
-            unit = units.find('div', id=re.compile('^tlRecentStories_'))
-            log('Unit len' + str(len(unit)))
-            cards = unit.findAll('div', recursive=False)
-            log('Card len' + str(len(cards)))
-            cardPackData = self.__slave_parsing_tlunit_cards(page, cards)
-            for cardData in cardPackData:
-                cardData['cid'] = self.countCard
-                cardData['date'] = units_date
-                cardData['timestamp'] = unit_timestamp
-
-                self.countCard += 1
-                self.__insert2Db_card(cardData)
-
-    def __insert2Db_card(self, cardData):
+    def __try_insert_db(self, data):
         try:
-            log('Try insert card Id', self.countCard)
-            self.cardCollection.insert_one(cardData)
+            return self.db.next_collection_insert_one(data)
         except Exception as e:
             log('Insert Card Error', e)
             exit()
 
-    def __slave_parsing_tlunit_cards(self, page, cards):
-        cardPack = []
-        for card in cards:
-            hasCard = card.find('div')
-            if hasCard:
-                mainLink = self.__card_processing_mainLink(card)
-                if mainLink['next_action'] != '-1':
-                    header = self.__card_processing_header(page, card)
-                    content = self.__card_content(page, card)
-                    cardData = {
-                        'main-link': mainLink['main_link'],
-                        'header': header,
-                        'content': content,
-                        'raw': str(hasCard),
-                        'history-cluster-id': page['history-cluster-id']
-                    }
-                    cardPack.append(cardData)
-        return cardPack
+    def remove_tags(self, text):
+        return html_url.unescape(re.compile(r'<[^>]+>').sub('', text))
 
-    def __card_content(self, page, card):
-        p = card.findAll('h4')
-        content = {'content-html': '', 'content-text': '', 'privacy': ''}
-        if len(p) == 1:
-            content['privacy'] = self.__linkCleanup(str(p[0].text).strip())
-        if len(p) == 2:
-            content['content-html'] = self.__linkCleanup(str(p[0].contents[0]).strip())
-            content['content-text'] = self.__linkCleanup(str(p[0].text).strip())
-            content['privacy'] = self.__linkCleanup(str(p[1].text).strip())
-        return content
+    @staticmethod
+    def hprint(h):
+        document_root = html.fromstring(h)
+        print(etree.tostring(document_root, encoding='unicode', pretty_print=True))
 
-    def __card_processing_mainLink(self, card):
-        a = card.find('a')
-        action = {
-            'main_link': '-1',
-            'next_action': '-1'
+    @staticmethod
+    def mini_header(text):
+        header_mini = ['shared', 'posted in', 'via', 'reviewed', 'subscribed', 'was at', 'uploaded', 'going to',
+                       'likes', 'commented', 'replied', 'reacted', 'liked', 'was tagged', 'voted', 'saved', 'updated',
+                       'was live', 'approved', 'published', 'using', 'edited', 'changed', 'replied', 'wrote on',
+                       'followed',
+                       'mentioned', 'became', 'is with', 'was with', 'is at', 'sent',
+                       'poked', 'added', 'feeling', 'created', 'played', 'breeding', 'evolved', 'took', 'earned',
+                       'new high score',
+                       'celebrating', 'solved', 'interested', 'watching', 'was playing', 'searched', 'watched',
+                       'removed',
+                       'posted', 'untagged'
+                       ]
+        for hm in header_mini:
+            if hm in text:
+                return hm
+        return '!!!UNKNOWTAG:' + text if len(text.strip()) > 0 else ''
+
+    def parsing_mainlink(self, card):
+        alink = card.xpath('.//div/a')
+        alink_main = alink[0].attrib.get('href', '#')
+        return html_url.unescape(alink_main)
+
+    def parsing_header(self, card):
+        header = card.xpath('.//h3[not(h3)]')
+
+        header_full_text_orginal = ''.join(header.xpath('.//text()').getall())
+        header_full_text = header_full_text_orginal
+        header_links: List[Optional[Selector]] = header.xpath('.//a')
+
+        param = []
+
+        for header_link in header_links:
+            header_link_text = self.remove_tags(header_link.get())
+            header_full_text = header_full_text.replace(header_link_text, '')
+
+            param.append({
+                'text': header_link_text,
+                'link': html_url.unescape(header_link.attrib.get('href', ''))
+            })
+
+        header_full_text = header_full_text.replace("'s", '')
+        header_full_text = header_full_text.replace(".", '')
+
+        simplify_header_text = self.mini_header(header_full_text)
+
+        if '!!!' in simplify_header_text and len(header_full_text.strip()):
+            with open(f'header_mini_{self.time_start.strftime("%Y%m%d_%H%M%S")}.txt', mode='a') as fo:
+                fo.write(header_full_text + '\n')
+
+        # Note:: if len(header_text) <= 0
+        # ประเภท ไม่มีหัวข้อ// มักจะเป็นการโพสด้วยตัวเอง // หรือโพสรูปเปล่าๆ ไม่ได้มีคอมเม้นอะไรเลย/ สามารถใช้นับโสตัวเองได้
+
+        header_return = {
+            'type': 'no-header' if len(header_full_text_orginal.strip()) == 0 else 'ok',
+            'simplify': simplify_header_text,
+            'fulltext': header_full_text_orginal,
+            'links': param,
         }
 
-        if a:
-            try:
-                action = {
-                    'main_link': a['href'],
-                    'next_action': 'search-type'
-                }
-            except Exception as e:
-                if str(e) == "'href'":
-                    action = {
-                        'main_link': '#',
-                        'next_action': 'search-type-for-mainLink'
-                    }
-        return action
+        return header_return
 
-    def __linkCleanup(self, uri):
-        return str(uri).replace('amp;', '')
+    def parsing_content(self, card, doc_id):
+        h4_content = card.css('h4')
+        privacy = []
+        content_html = ''
+        content_text = ''
+        thinking_type = 'normal'
 
-    def __card_processing_header(self, page, card):
-        headers = card.findAll('h3')
+        if len(h4_content) == 1:
+            privacy = h4_content.xpath('.//*/text()').getall()
+            if len(privacy) == 0:
+                # แสดงว่าเป็นโพสประเภท โพสที่ถูกลบ คอมเม้นที่ไม่ได้ขึ้นสถานะส่วนตัว การเริ่มเป็นเพื่อน การเข้ากลุ่ม โดนซ่อนโพส
+                thinking_type = 'type-1'
 
-        for header in headers:
-            if len(header.text) > 0:
-                card_type = self.__card_type_condition(header)
-                if card_type[1] != '0':
-                    all_links = self.__card_processing_header_findLinkAll(card_type, header)
-                    headerPage = {
-                        'card-type': str(card_type[0]).lower(),
-                        'header-links': all_links,
-                        'header-raw': str(header),
-                        'header-text': header.text
-                    }
-                    return headerPage
 
-    # def __getTypeList(self):
-    #     """
-    #              1 = Owener(subject)
-    #              2 = verb/Action
-    #              3 = Another(subject)
-    #              4 = Object
-    #              5 = source(object)
-    #              sp = spacial case (One tag can be more types)
-    #              dx = dont interest
-    #              ev = event (not parsing but interrest)
-    #
-    #             """
-    #     dd = {
-    #         '124': ['shared', 'posted in', 'via', 'reviewed', 'subscribed', 'was at', 'uploaded', 'going to'],
-    #         '1234': ['likes', 'commented', 'replied', 'reacted', 'liked', 'was tagged', 'voted'],
-    #         '12435': ['saved'],
-    #         '1': ['updated', 'was live', 'approved', 'published', 'using', 'edited', 'changed'],
-    #         '123': ['replied', 'wrote on', 'followed', 'mentioned', 'became', 'is with', 'was with', 'is at', 'sent',
-    #                 'poked'],
-    #         'sp': ['added', 'feeling', 'created'],
-    #         'dx': ['played', 'breeding', 'evolved', 'took', 'earned', 'new high score', 'celebrating', 'solved'],
-    #         'ev': ['interested', 'watching', 'was playing']
-    #     }
-    #     tn = []
-    #     for k, val in dd.items():
-    #         for v in val:
-    #             tn.append((v, k))
-    #     return tn
+        elif len(h4_content) == 2:
+            privacy = h4_content[1].xpath('.//*/text()').getall()
+            content_html = html_url.unescape(h4_content[0].get())
+            content_text = ''.join(h4_content[0].xpath('.//*/text()').getall())
+            if len(privacy) == 0:
+                # ส่วนใหญ่จะเป็นการ like comment
+                thinking_type = 'type-2'
 
-    # def __card_type_condition(self, header):
-    #     for tp in self.typeList:
-    #         if tp[0] in header.text:
-    #             return tp
-    #     return ('0', '0')
+        else:
+            with open(f'content_error_{self.time_start.strftime("%Y%m%d_%H%M%S")}.txt', mode='a') as fo:
+                fo.write(str(doc_id) + '\n')
 
-    def __card_processing_header_findLinkAll(self, card_type, header):
-        '''{sub}{cmd}{owner}{object}'''
-        headerClassify = {}
-        alinks_in_header = header.findAll('a')
-        header_link_all = self.__card_header_classify_link(alinks_in_header)
-        return header_link_all
+        clean_privacy = []
+        for privacy_text in privacy:
+            cc = str(privacy_text).strip()
+            if len(cc) > 1:
+                clean_privacy.append(cc)
 
-    # def __card_type_check_realType(self, oldType, links):
-    #     thinking_type = {
-    #         'likes': ['13']
-    #     }
-
-    def __card_processing_header_typeLengthCheck(self, card_type, links):
-        return len(card_type) == len(links)
-
-    def __card_processing_header_type_translate(self, type_number):
-        typeList = {
-            '1': ('owner', True),
-            '2': ('action', False),
-            '3': ('another', True),
-            '4': ('object', True),
-            '5': ('source', True)
+        content_return = {
+            'privacy': clean_privacy,
+            'content-text': content_text,
+            'content-html': content_html,
+            'type-think': thinking_type,
         }
-        return typeList[str(type_number)]
 
-    def __card_header_classify_link(self, links):
-        ret = []
-        for link in links:
-            p = {}
-            p['text'] = link.text
-            try:
-                p['uri'] = link['href']
-            except:
-                p['uri'] = '#'
-            ret.append(p)
-        return ret
+        return content_return
+
+    def tlstory_get_date(self, tlstory):
+        tlmonth, tlday, tlyear = tlstory.attrib.get('id').split('_')[1:]
+        tlunits_date = [int('20' + str(tlyear)), int(tlmonth), int(tlday)]
+        units_datetime = datetime.datetime(tlunits_date[0], tlunits_date[1], tlunits_date[2])
+        return units_datetime.timestamp()
