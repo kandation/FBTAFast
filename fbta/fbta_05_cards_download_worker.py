@@ -34,7 +34,7 @@ class FBTACardsDownloadWorker(FBTAMainWorker):
                 'url': url,
                 'source': str(self.node_worker.browser.driver.page_source),
                 'refer-id': docs.get('_id'),
-                'old-data': docs
+                'history': docs
             }
             self.__db.next_collection_insert_one(data)
             self.stat.add_stat('posts-counter')

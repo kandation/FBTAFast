@@ -1,4 +1,5 @@
 import re
+import time
 
 from fbta_configs import FBTAConfigs
 from fbta_global_database_manager import FBTADBManager
@@ -24,12 +25,19 @@ class FBTAActivityToCardsNew:
         self.time_start = datetime.datetime.now()
         self.__data_cid = 0
 
+        self.__stat = {
+            'insert-fail': 0,
+            'insert-success': 0
+        }
+
     def main(self):
         self.__main_run()
         log(f':Act2Card: Finished as {self.__data_cid} cards')
+        self.__stat['num-cards'] = self.__data_cid
+        self.db.add_stat_to_db('act2card', 'single', self.time_start.timestamp(), time.time(), self.__stat)
 
     def __main_run(self):
-        q_docs = self.db.getCurrentDocs()
+        q_docs = self.db.get_current_docs()
         log(f':Act2Card: Has {q_docs.count()} pages')
 
         for doc in q_docs:
@@ -69,9 +77,10 @@ class FBTAActivityToCardsNew:
                     self.__data_cid += 1
 
                     if self.__try_insert_db(data):
-                        pass
+                        self.__stat['insert-success'] += 1
                         # log(f':Act2Card:\t\tInsert {self.__data_cid} OK')
                     else:
+                        self.__stat['insert-fail'] += 1
                         log(f':Act2Card:\t\t> Insert problem {self.__data_cid}')
 
     def __try_insert_db(self, data):

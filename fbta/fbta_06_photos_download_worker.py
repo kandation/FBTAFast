@@ -1,5 +1,6 @@
 import re
 import shutil
+import time
 from typing import List, Optional
 
 from fbta_06_photos_download_method import FBTAPhotosDownloadMethod
@@ -17,7 +18,7 @@ class FBTAPhotosDownloadWorker(FBTAMainWorker):
 
         FBTAMainWorker.__init__(self, node_master)
         # self.__activity: FBTAHistoryDownloaderMethod = FBTAHistoryDownloaderMethod.NONE
-        self.__photos_method:FBTAPhotosDownloadMethod = FBTAPhotosDownloadMethod.NONE
+        self.__photos_method: FBTAPhotosDownloadMethod = FBTAPhotosDownloadMethod.NONE
 
     def after_init(self):
         self.__photos_method = FBTAPhotosDownloadMethod(self.browser)
@@ -44,6 +45,15 @@ class FBTAPhotosDownloadWorker(FBTAMainWorker):
             url = self.__node_master.url.getUrlWithMain(j)
             self.browser.goto(url)
             # print('------------------')
+
+            source = self.browser.driver.page_source
+            page_data = {
+                'url':url,
+                'cluster-history': self.name,
+                'time': int(time.time()),
+                'source': source,
+                'history_docs': docsOnces}
+
             # TODO NOT secure get please use browser class
             link = self.browser.driver.selector.xpath("//a[contains(.,'View Full Size')]").attrib.get('href')
             if link:
@@ -67,6 +77,13 @@ class FBTAPhotosDownloadWorker(FBTAMainWorker):
                 # print('>>>>>>>>>>>>>>>>', name)
                 imgName = self.save_image_to_file(response, name)
                 self.stat.add_stat('download_success')
+                page_data['success'] = {
+                    'filename': imgName,
+                    'img-url': response.url,
+                    'header': str(response.headers),
+                    'org-link':link
+                }
+                self.__db.next_collection_insert_one(page_data)
                 del response
                 return imgName
             else:
@@ -75,12 +92,11 @@ class FBTAPhotosDownloadWorker(FBTAMainWorker):
                 """
                 print(f':PDW: detect CONTENT_NOT_FOUND between download Photos @ {url}')
                 self.stat.add_stat('download_fail')
+            self.__db.next_collection_insert_one(page_data)
 
     def __getName(self, url):
         tt = str(url).split('?_nc_')[0].split('/')[-1]
         return tt
-
-
 
     def save_image_to_file(self, image, name):
         names = '{dirname}/{suffix}'.format(

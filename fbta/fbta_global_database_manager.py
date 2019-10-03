@@ -3,6 +3,7 @@ from typing import List, Optional
 import pymongo
 from pymongo import MongoClient
 
+from fbta_difftime import FBTADifftime
 from fbta_log import log
 
 
@@ -36,7 +37,9 @@ class FBTADBManager:
             self.__db: pymongo.mongo_client.database.Database = self.__client.get_database(dbname)
 
             self.__currentCollection: pymongo.collection = self.__db.get_collection(current_coll)
-            self.__nextCollection: pymongo.collection = self.__db.get_collection(next_coll)
+            self.__collection_next: pymongo.collection = self.__db.get_collection(next_coll)
+            if stat_coll:
+                self.__collection_stat: pymongo.collection = self.__db.get_collection(stat_coll)
 
             self.__prop_currntCollection_name: str = current_coll
             self.__prop_nextCollection_name: str = next_coll
@@ -63,11 +66,11 @@ class FBTADBManager:
         if self.getCurrentCollection_num() < 0:
             raise Exception(self.__prop_currntCollection_name, 'Database is Empty')
 
-    def getCurrentDocsByLimit(self, start, length) -> pymongo.cursor.Cursor:
+    def get_current_docs_by_limit(self, start, length) -> pymongo.cursor.Cursor:
         log(f':DBMange: \t■■■■■■■ DB Load with startPage=[{start}] to [{start + length - 1}] with[{length}]')
         return self.__currentCollection.find(no_cursor_timeout=True).skip(start).limit(length)
 
-    def getCurrentDocs(self):
+    def get_current_docs(self):
         return self.__currentCollection.find(no_cursor_timeout=True)
 
     def current_insert_one(self, data: dict):
@@ -80,7 +83,10 @@ class FBTADBManager:
         return self.__currentCollection.drop()
 
     def next_collection_insert_one(self, data: dict):
-        return self.__nextCollection.insert_one(data)
+        return self.__collection_next.insert_one(data)
+
+    def stat_collection_insert_one(self, data: dict):
+        return self.__collection_stat.insert_one(data)
 
     @property
     def is_db_can_run(self):
@@ -104,3 +110,15 @@ class FBTADBManager:
 
     def cal_start_index(self):
         return self.db_index * self.db_skipter
+
+    def add_stat_to_db(self, name, method,start_time,end_time,stat):
+        data = {
+            'process-name':name,
+            'process-method': method,
+            'process-time-start':start_time,
+            'process-time-end':end_time,
+            'process-time-total-text':FBTADifftime.printTimeDiff(start_time),
+            'stat-data':stat,
+        }
+
+        self.stat_collection_insert_one(data)

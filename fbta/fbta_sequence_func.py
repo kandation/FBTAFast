@@ -26,7 +26,7 @@ class FBTASequenceFunction:
             start=FBTADifftime.timestamp2date(self._time_start_all),
             fin=FBTADifftime.timestamp2date(time.time()),
             spend=FBTADifftime.printTimeDiff(self._time_start_process),
-            spendall=FBTADifftime.printTimeDiff(self._time_start_process)
+            spendall=FBTADifftime.printTimeDiff(self._time_start_all)
         ))
         self._time_start_process = time.time()
 

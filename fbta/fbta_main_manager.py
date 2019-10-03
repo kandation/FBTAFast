@@ -35,7 +35,7 @@ class FBTAMainManager(metaclass=ABCMeta):
         self.__settings = self.__node_master.settings
         self.__configs = self.__node_master.configs
 
-        self.__db = FBTADBManager(self.settings.db_name, db_collection_name)
+        self.__db = FBTADBManager(self.settings.db_name, db_collection_name, self.__configs.db_collection_stat)
         self.__stat = FBTAStatistic()
         self.__stat.history_time_global_start = time.time()
 
@@ -145,13 +145,21 @@ class FBTAMainManager(metaclass=ABCMeta):
 
     def __method_loop_big_report_show(self, loop_time):
         num_docs_now = len(self.db.docs_list)
+        estimate = 'n/a'
+        time_diff = time.time() - self.__stat.history_time_global_start
+        if time_diff > 60 and self.db.db_index > 0:
+            estimate = (time_diff * self.db.current_num) / self.db.db_index
+            estimate = FBTADifftime.time2string(estimate)
+
         str = (f"\n---------------------\n"
                f"\t>> DocsLen  : {num_docs_now}\n"
                f"\t>> Index    : {self.db.db_index} / {self.db.current_num}\n"
                f"\t>> TimeNow  : {time.time()} ({datetime.datetime.now()})\n"
                f"\t>> Loopshow : {loop_time}   \n"
+               f"\t>> Clusters : {self.db.clusters_num}\n"
                f"\t>> FromStart: {FBTADifftime.printTimeDiff(self.__stat.history_time_global_start)}   \n"
                f"\t>> waiting  : {len(self.db.docs_list_waiting)}\n"
+               f"\t>> Estimate : {estimate}\n"
                f"-----------------------\n"
                )
 
@@ -316,7 +324,7 @@ class FBTAMainManager(metaclass=ABCMeta):
             skipter = (2 * self.db.clusters_num) - len(self.db.docs_list)
             log(f':mManger:log: #### Cluster skipter load [{skipter}]')
 
-            cards_temp_cursor = self.__db.getCurrentDocsByLimit(self.db.db_index, skipter)
+            cards_temp_cursor = self.__db.get_current_docs_by_limit(self.db.db_index, skipter)
 
             for card in cards_temp_cursor:
                 self.db.docs_list.append(card)
@@ -327,9 +335,18 @@ class FBTAMainManager(metaclass=ABCMeta):
 
     def __endThread(self):
         log(':mManage: ■■■■■■■■ Send End Thread ■■■■■■■■')
+        worker_stat = []
         for slave in self.workers:
-            self.__stat.history_stat(slave.join())
+            worker_stat.append(self.__stat.json_to_stat(slave.join()))
             log(f':mManage:\t\t - Cluster {slave.name} JOINED')
+
+        self.db.add_stat_to_db(
+            str(self.__slave_class_name.__name__),
+            'cluster',
+            self.__stat.history_time_global_start,
+            time.time(),
+            worker_stat
+        )
 
         for worker in self.workers:
             del worker

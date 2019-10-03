@@ -7,9 +7,10 @@ if __name__ == '__main__':
     configs = FBTAConfigs()
 
     settings.kill_driver_on_end = True
-    settings.driver_path = r'./Driver/chromedriver_74.exe'
+    settings.driver_path = r'./Driver/chromedriver_76.exe'
     settings.dir_cookies = r'./cookies/'
     settings.use_nodeMaster_loadCookie = True
 
     m = FBTANodeMaster(settings, configs)
     m.start()
+    while True:pass

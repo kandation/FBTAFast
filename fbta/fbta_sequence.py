@@ -1,7 +1,6 @@
 import time
 from pprint import pprint
 
-from fbta_04_activity_to_card import FBTAActivityToCards
 from fbta_04_activity_to_card import FBTAActivityToCardsNew
 from fbta_05_cards_download_manager import FBTACardsDownloadManager
 from fbta_02_clusters import FBTAClusterInfo

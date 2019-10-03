@@ -30,8 +30,8 @@ class FBTAStatistic:
         else:
             self.custom_stat[key] = 1
 
-    def history_stat(self, param):
-        print(param)
+    def json_to_stat(self, param):
+        return json.loads(param)
 
 
 if __name__ == '__main__':
