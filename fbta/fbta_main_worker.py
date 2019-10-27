@@ -179,6 +179,9 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
                 try_agin += 1
         return ret
 
+    def __emergency_stop(self):
+        pass
+
     def __restart_variable(self):
         self.__slave_is_waiting_job = True
         self.is_ready = False
@@ -235,27 +238,26 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
 
         while not self.__is_must_running():
             # TODO DONT Forget try-except to protect
-            self.__method_normal_worker_run()
-            # try:
-            #     self.__method_normal_worker_run()
-            #     pass
-            #
-            # except WebDriverException as web_error:
-            #     log(f':mWorker: [{self.name}] WEBERROR as [{web_error}]')
-            #     self.__init_browser()
-            #     self.__stat.worker_browser_died += 1
-            #
+            # self.__method_normal_worker_run()
+            try:
+                self.__method_normal_worker_run()
+                pass
+
             # except Exception as e:
             #     log(f':mWorker: ??? [{self.name}] Worker die by Exception [{e}]')
-            #
-            #
-            # except:
-            #     log(f'mWorker: ???? [{self.name}] Thread Die by something')
-            #     if self.__loop_try_agin > 10:
-            #         self.sos_signal = True
-            #     else:
-            #         self.download_current.restart_if_thread_die()
-            #     self.__loop_try_agin += 1
+            #     self.__init_browser()
+            #     self.__stat.worker_browser_died += 1
+
+
+            except BaseException as e:
+                log(f'mWorker: ???? [{self.name}] Thread Die by something [{e}]')
+                if self.__loop_try_agin > 10:
+                    self.sos_signal = True
+                else:
+                    self.download_current.restart_if_thread_die()
+                self.__loop_try_agin += 1
+
+
 
         log(f':mWorker:\t\t>> {self.slave_class_name} [{self.name}] is Out Loop')
 

@@ -118,12 +118,12 @@ class FBTAWorkerBrowser(FBTABrowserTitle):
 
 
     def save_cookies(self):
-        file_name = self.__settings.dir_cookies + 'fbta_cookies.pkl'
+        file_name = self.__settings.dir_cookies + 'fbta_cookies_old.pkl'
         pickle.dump(self.driver.get_cookies(), open(file_name, mode='wb'))
         log(f':Browser: [{self.name}] Save Cookie OK')
 
     def load_cookies(self):
-        file_name = self.__settings.dir_cookies + 'fbta_cookies.pkl'
+        file_name = self.__settings.dir_cookies + 'fbta_cookies_old.pkl'
         if os.path.exists(file_name):
             cookies = pickle.load(open(file_name, mode='rb'))
             for cookie in cookies:

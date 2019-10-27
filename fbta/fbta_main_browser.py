@@ -39,6 +39,7 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
         self.__signal_login: bool = True
         self.__signal_need_restart_browser: bool = False
         self.__signal_reload_content: bool = False
+        self.__signal_reload_content_once: bool = False
 
         self.__title_status = FBTABrowserConstant.STATUS_NORMAL
 
@@ -93,7 +94,7 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
             self.driver.refresh()
 
     def save_cookies(self):
-        file_name = self._settings.dir_cookies + 'fbta_cookies.pkl'
+        file_name = self._settings.dir_cookies + 'fbta_cookies_old.pkl'
         pickle.dump(self.driver.get_cookies(), open(file_name, mode='wb'))
         log(f':Browser: [{self.name}] Save Cookie OK')
 
@@ -127,10 +128,16 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
         elif self.__title_status == FBTABrowserConstant.STATUS_CONTENT_RELOAD:
             self.__update_signal(reload=True)
 
+        elif self.__title_status == FBTABrowserConstant.STATUS_CONTENT_RELOAD_ONCE:
+            self.__update_signal_once(content_once=True)
+
     def __update_signal(self, login=False, restart=False, reload=False):
         self.__signal_login = login
         self.__signal_need_restart_browser = restart
         self.__signal_reload_content = reload
+
+    def __update_signal_once(self, content_once=False):
+        self.__signal_reload_content_once = content_once
 
     def goto(self, url, stream=False):
         self._check_internet_connect()
@@ -160,7 +167,7 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
             self.driver.quit()
             log(f':Browser: [{self.name}] Driver Killed (✖╭╮✖)')
         except Exception as e:
-            log(f':Browser: [{self.name}] Driver Kill Error as {e}')
+            log(f':Browser: [{str(self.name)}] Driver Kill Error as {e}')
 
     def __del__(self):
         if self.__test_end_killer:
@@ -207,8 +214,12 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
         return self.__is_master
 
     @property
-    def has_signal(self)->bool:
+    def has_signal_loop(self)->bool:
         return any([self.__signal_login,self.__signal_reload_content, self.__signal_need_restart_browser])
+
+    @property
+    def has_signal_once(self) -> bool:
+        return any([self.__signal_reload_content_once])
 
     @property
     def login_signal(self) -> bool:
@@ -234,3 +245,10 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
     @property
     def signal_reload_content(self) -> bool:
         return self.__signal_reload_content
+
+    @property
+    def signal_reload_content_once(self) -> bool:
+        return self.signal_reload_content_once
+
+    def reset_loop_signal(self):
+        self.__update_signal()

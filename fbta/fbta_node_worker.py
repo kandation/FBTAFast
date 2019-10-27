@@ -56,8 +56,15 @@ class FBTANodeWorker:
         try_loop = 0
         while True:
             self.browser.goto(url)
-            if not self.browser.has_signal or try_loop > 15:
+            if self.browser.has_signal_once:
+                log(f':Slave: Has a signal once and dont GOTO URL')
                 break
+
+            if not self.browser.has_signal_loop or try_loop > 15:
+                self.browser.reset_loop_signal()
+                break
+
+
             self.__siteErrorHandling(url, try_loop)
         return True
 
@@ -66,6 +73,10 @@ class FBTANodeWorker:
         if self.browser.login_signal:
             self.__node_master.slave_call_master_new_login(self, url)
             try_loop = 0
+        if self.browser.signal_reload_content:
+            log(':slave: Reload Content')
+            sleep(10)
+            try_loop += 1
         if self.browser.signal_reload_content:
             log(':slave: Reload Content')
             sleep(10)

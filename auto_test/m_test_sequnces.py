@@ -9,17 +9,18 @@ if __name__ == '__main__':
     settings.kill_driver_on_end = True
     settings.driver_path = r'./Driver/chromedriver_76.exe'
     settings.dir_cookies = r'./cookies/'
-    settings.dir_save_path = r'./save/'
+    settings.dir_save_path = r'../save/'
     settings.use_nodeMaster_loadCookie = True
     settings.use_nodeMaster = True
     settings.init_node_master_browser = True
     settings.cluster_num = 50
     settings.cluster_limit = 50
 
-    settings.renew_index = True
+    settings.renew_index = False
     settings.fast_worker = True
     # settings.date_process = [2018, 7, 1]
-    settings.date_process = [2019, 8, 1]
+    # settings.date_process = [2019, 8, 1]
+    settings.date_process = [2019, 10, 1]
     settings.dir_path_detail = settings.DIR_DETAIL_NEW_ALL_RUN
     # settings.db_name = 'fbta_20190827_1544'
     # settings.db_name = 'fbta_20190906_1220'

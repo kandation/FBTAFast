@@ -5,6 +5,7 @@ class FBTAConfigs:
 
         self.__facebook_url_main = 'https://m.facebook.com'
         self.__db_collection_stat = 'statistic'
+        self.__db_collection_log = 'log'
         self.__db_collection_yearbox_name = '00_yearbox_page'
         self.__db_collection_page_name = '01_activity_page'
         self.__db_collection_card_name = '02_card_page'

@@ -69,7 +69,7 @@ class FBTAWorkerBrowserS(FBTAMainBrowser):
         return driver
 
     def load_cookies(self):
-        file_name = self._settings.dir_cookies + 'fbta_cookies.pkl'
+        file_name = self._settings.dir_cookies + 'fbta_cookies_old.pkl'
         if os.path.exists(file_name):
             cookies = pickle.load(open(file_name, mode='rb'))
             for cookie in cookies:
@@ -111,6 +111,8 @@ class FBTAWorkerBrowserS(FBTAMainBrowser):
                 sleep(30)
 
         return ret
+
+
 
     @property
     def driver(self) -> FBTADriver:

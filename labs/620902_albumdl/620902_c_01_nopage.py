@@ -17,7 +17,7 @@ import html
 
 from parsel import Selector
 def add_cookies(session):
-    file_name = 'cookies/fbta_cookies.pkl'
+    file_name = 'cookies/fbta_cookies_old.pkl'
     if os.path.exists(file_name):
         cookies = pickle.load(open(file_name, mode='rb'))
         for cookie in cookies:

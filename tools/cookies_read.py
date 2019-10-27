@@ -2,7 +2,7 @@ import pickle
 
 
 def loadCookies(dir='./'):
-    cookies = pickle.load(open(dir + "fbta_cookies.pkl", "rb"))
+    cookies = pickle.load(open(dir + "fbta_cookies_old.pkl", "rb"))
     for cookie in cookies:
         glova = ''
         for c in cookie:

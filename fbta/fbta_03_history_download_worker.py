@@ -37,7 +37,9 @@ class FBTAHistoryDownloadWorker(FBTAMainWorker):
                         self.stat.add_stat('hdw_screenshot_fail')
                     self.stat.add_stat('hdw_couter_page')
                 else:
-                    print(':HDW-DEBUG:',self.__activity.page)
+                    __current_url = self.__activity.page.get('current-url')
+                    __next_url = self.__activity.page.get('next-url')
+                    log(f':History_Worker: Ended on Current_url: {__current_url} Next_url {__next_url}')
                     break
 
             else:

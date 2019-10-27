@@ -114,7 +114,7 @@ class FBTADriver:
         return self.__selector.xpath(xpath)
 
     def __load_cookies(self):
-        file_name = self.__settings.dir_cookies + 'fbta_cookies.pkl'
+        file_name = self.__settings.dir_cookies + 'fbta_cookies_old.pkl'
         if os.path.exists(file_name):
             cookies = pickle.load(open(file_name, mode='rb'))
             for cookie in cookies:

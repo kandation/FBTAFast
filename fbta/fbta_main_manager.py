@@ -1,5 +1,5 @@
 import copy
-import time, datetime
+import time, datetime, os
 from typing import List, Optional
 
 import pymongo
@@ -89,6 +89,18 @@ class FBTAMainManager(metaclass=ABCMeta):
             workser.setDaemon(False)
             workser.start()
 
+    def __emergency_stop_browser_via_file(self):
+        if os.path.exists('./emergency_cluster_stop.stop'):
+            print(f':mMange: ■■■■■ EMERGENCY STOP ■■■■■■\n'
+                  f'         ■■■ {datetime.datetime} ■■■\n'
+                  f'         ■■■■■■■■■■■■■■■■■■■■■■■■■■■\n')
+            try:
+                os.remove('./emergency_cluster_stop.stop')
+            except:
+                print('Remove Emergency file error')
+
+
+
     def _main(self):
         self.__create_workers(self.__slave_class_name)
         self.__run_cluster()
@@ -99,6 +111,8 @@ class FBTAMainManager(metaclass=ABCMeta):
         self.__init_time_event()
 
         while True:
+            self.__emergency_stop_browser_via_file()
+
             self.__method_addDataToList()
 
             __stopCouter = self.__method__addJobs()
@@ -193,13 +207,13 @@ class FBTAMainManager(metaclass=ABCMeta):
             log(key, '=', settings[key])
         log('---------------------')
 
-    def __create_workers(self, class_name):
+    def __create_workers(self, class_name: classmethod):
         log(f':mMange: ■■■■■■■ Create Worker with [{self.db.clusters_num}] Clusters')
         for worker_id in range(self.db.clusters_num):
             self.workers.append(class_name(self.__node_master, self.db))
             self.__create_workers_method(class_name, worker_id)
 
-    def __create_workers_method(self, class_name, worker_id):
+    def __create_workers_method(self, class_name: classmethod, worker_id):
         self.workers[worker_id].slave_name = str(worker_id)
         self.workers[worker_id].name = 'Slave-' + str(worker_id)
         self.workers[worker_id].slave_class_name = str(class_name.__name__)
@@ -252,8 +266,8 @@ class FBTAMainManager(metaclass=ABCMeta):
         if search_index >= 0:
             remove = self.db.docs_list_waiting.pop(search_index)
             log(f':mMange: Remove from WAITING_LIST [{id}] index [{search_index}] '
-                f'from {remove.get("worker", "NAN_WORKER")} in '
-                f'{len(self.db.docs_list_waiting)} @ {remove.get("time", "non_naja")}')
+                f'from {remove.get("worker", "NAN_WORKER")} in wList=[ '
+                f'{len(self.db.docs_list_waiting)} ]@ {remove.get("time", "non_naja")}')
 
     def __method_say_hello(self):
         if time.time() - self.say_hello_time > 5:
