@@ -5,7 +5,7 @@ from fbta_node_master import FBTANodeMaster
 from fbta_log import log
 
 
-class FBTAHistoryDownloadWorker(FBTAMainWorker):
+class   FBTAHistoryDownloadWorker(FBTAMainWorker):
     def __init__(self, node_master: FBTANodeMaster, db: FBTADBManager):
         self.__node_master = node_master
         self.__db = db

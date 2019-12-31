@@ -64,7 +64,6 @@ class FBTANodeWorker:
                 self.browser.reset_loop_signal()
                 break
 
-
             self.__siteErrorHandling(url, try_loop)
         return True
 
@@ -83,7 +82,6 @@ class FBTANodeWorker:
             try_loop += 1
         if self.browser.signal_restart_browser:
             raise Exception('Kill Browser by exception for new instance browser')
-
 
     def screenshot_by_id(self, element_id: str, file_name: str, sub_dir=None):
         pass

@@ -5,6 +5,8 @@ from selenium import webdriver
 from fbta_browser_constant import FBTABrowserConstant
 from abc import ABCMeta, abstractmethod
 
+from fbta_log import log
+
 
 class FBTABrowserTitle(metaclass=ABCMeta):
 
@@ -65,7 +67,7 @@ class FBTABrowserTitle(metaclass=ABCMeta):
                 ]
             },
             'Error Facebook': {
-                'do': FBTABrowserConstant.STATUS_CONTENT_RELOAD,
+                'do': FBTABrowserConstant.STATUS_CONTENT_RELOAD_ONCE,
                 'step': [
                     FBTABrowserConstant.DEBUG_SHOW_SOURCE,
                     FBTABrowserConstant.DOING_TITLE_CHECK_ONLY
@@ -107,8 +109,11 @@ class FBTABrowserTitle(metaclass=ABCMeta):
             if self.__has_someting_in_step(FBTABrowserConstant.DEBUG_SHOW_SOURCE, step):
                 removed_word = str(self.driver.title).lower().strip()
                 if str(key).lower().strip() in removed_word:
-                    print('@DEBUG_SHOWSOURCE', self.driver.page_source)
-                    with open('debug_'+str(datetime.datetime.now().strftime('%Y%m%d_%H%M%S')) + '.log.txt', mode='w', encoding='utf8') as fo:
+                    log('@DEBUG_SHOWSOURCE', self.driver.title, self.driver.raw_url)
+                    with open('./Debug/debug_' + str(datetime.datetime.now().strftime('%Y%m%d_%H%M%S')) + '.log.txt',
+                              mode='w', encoding='utf8') as fo:
+                        fo.write(self.driver.raw_url)
+                        fo.write('\n')
                         fo.write(self.driver.page_source)
         if result:
             return max(result)

@@ -6,6 +6,7 @@ from builtins import property
 from time import sleep
 
 import requests
+import selenium
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
@@ -65,8 +66,17 @@ class FBTABrowserSelenium(FBTAMainBrowser):
 
     def _start_driver(self) -> webdriver.Chrome:
         if self._settings.init_node_master_browser:
-            driver = webdriver.Chrome(self._settings.driver_path,
+            try:
+                driver = webdriver.Chrome(self._settings.driver_path,
                                       chrome_options=self.__chrome_options)
+            except selenium.common.exceptions.SessionNotCreatedException as e:
+                print('ChromeDriver not support chrome version please Download '
+                      'https://chromedriver.chromium.org/downloads\n'
+                      'And Edit ChromeDriver path in your settings')
+                raise e
+                exit()
+            except BaseException as base_exp:
+                raise base_exp
             driver.implicitly_wait(self._const_timeout_loadpage)
         else:
             driver = None
@@ -92,3 +102,6 @@ class FBTABrowserSelenium(FBTAMainBrowser):
 
     def _driver_get(self, url, stream=False):
         self.driver.get(url)
+
+    # def __del__(self):
+    #     self.driver.close()

@@ -36,13 +36,13 @@ class FBTADBManager:
             self.__client: MongoClient = MongoClient()
             self.__db: pymongo.mongo_client.database.Database = self.__client.get_database(dbname)
 
-            self.__currentCollection: pymongo.collection = self.__db.get_collection(current_coll)
+            self.__current_collection: pymongo.collection = self.__db.get_collection(current_coll)
             self.__collection_next: pymongo.collection = self.__db.get_collection(next_coll)
             if stat_coll:
                 self.__collection_stat: pymongo.collection = self.__db.get_collection(stat_coll)
 
-            self.__prop_currntCollection_name: str = current_coll
-            self.__prop_nextCollection_name: str = next_coll
+            self.__prop_current_collection_name: str = current_coll
+            self.__prop_next_collection_name: str = next_coll
 
             self.__data_list: List[Optional[pymongo.cursor.Cursor]] = []
 
@@ -50,6 +50,9 @@ class FBTADBManager:
 
     def get_loop_time(self):
         return 2 if int(0.05 * self.current_num) <= 0 else int(0.05 * self.current_num) + 1
+
+    def get_db_name(self) -> str:
+        return self.__db.name
 
     @property
     def docs_num(self):
@@ -60,33 +63,38 @@ class FBTADBManager:
         self.__db_cardnum = val
 
     def getCurrentCollection_num(self):
-        return self.__currentCollection.count()
+        return self.__current_collection.count()
 
     def checkCurrentIsNotEmpty(self):
         if self.getCurrentCollection_num() < 0:
-            raise Exception(self.__prop_currntCollection_name, 'Database is Empty')
+            raise Exception(self.__prop_current_collection_name, 'Database is Empty')
 
     def get_current_docs_by_limit(self, start, length) -> pymongo.cursor.Cursor:
         log(f':DBMange: \t■■■■■■■ DB Load with startPage=[{start}] to [{start + length - 1}] with[{length}]')
-        return self.__currentCollection.find(no_cursor_timeout=True).skip(start).limit(length)
+        return self.__current_collection.find(no_cursor_timeout=True).skip(start).limit(length)
 
-    def get_current_docs(self):
-        return self.__currentCollection.find(no_cursor_timeout=True)
+    def get_current_docs(self) -> pymongo.cursor.Cursor:
+        log(f':DBMange: \t■■■■■■■ DB Load Full')
+        return self.__current_collection.find(no_cursor_timeout=True)
 
     def current_insert_one(self, data: dict):
-        return self.__currentCollection.insert_one(data)
+        return self.__current_collection.insert_one(data)
 
     def current_insert_many(self, data: list):
-        return self.__currentCollection.insert_many(data)
+        return self.__current_collection.insert_many(data)
 
     def current_drop(self):
-        return self.__currentCollection.drop()
+        return self.__current_collection.drop()
 
     def next_collection_insert_one(self, data: dict):
         return self.__collection_next.insert_one(data)
 
     def stat_collection_insert_one(self, data: dict):
         return self.__collection_stat.insert_one(data)
+
+    def stat_collectioin_add_one(self, data: dict):
+        find_docs = {'process-name': data.get('process-name')}
+        return self.__collection_stat.update_one(find_docs, {"$set": data}, upsert=True)
 
     @property
     def is_db_can_run(self):
@@ -111,14 +119,33 @@ class FBTADBManager:
     def cal_start_index(self):
         return self.db_index * self.db_skipter
 
-    def add_stat_to_db(self, name, method,start_time,end_time,stat):
+    def add_stat_to_db(self, name, method, start_time, end_time, stat):
         data = {
-            'process-name':name,
+            'process-name': name,
             'process-method': method,
-            'process-time-start':start_time,
-            'process-time-end':end_time,
-            'process-time-total-text':FBTADifftime.printTimeDiff(start_time),
-            'stat-data':stat,
+            'process-time-start': start_time,
+            'process-time-end': end_time,
+            'process-time-total-text': FBTADifftime.printTimeDiff(start_time),
+            'log-type': 'summery',
+            'stat-data': stat,
         }
 
-        self.stat_collection_insert_one(data)
+        self.stat_collectioin_add_one(data)
+
+    def add_stat_to_db_auto(self, name, method, start_time, end_time, stat):
+        data = {
+            'process-name': name,
+            'process-method': method,
+            'process-time-start': start_time,
+            'process-time-end': end_time,
+            'process-time-total-text': FBTADifftime.printTimeDiff(start_time),
+            'log-type': 'autosave',
+            'stat-data': stat,
+        }
+        self.stat_collectioin_add_one(data)
+
+    def current_get_name(self) -> str:
+        return self.__current_collection.name
+
+    def next_get_name(self) -> str:
+        return self.__collection_next.name

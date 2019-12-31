@@ -88,10 +88,11 @@ class FBTAPhotosDownloadWorker(FBTAMainWorker):
                 return imgName
             else:
                 """
-                WHEN DATA-FT IN DB IS OLDER POST WILL BE DELETED WHEN LOAD PAGE AGIN FOUND NOT ELEMENTS
+                WHEN DATA-FT IN DB IS OLDER POST WILL BE DELETED WHEN LOAD PAGE AGAIN FOUND NOT ELEMENTS
                 """
-                print(f':PDW: detect CONTENT_NOT_FOUND between download Photos @ {url}')
+                log(f':PDW: detect CONTENT_NOT_FOUND between download Photos @ {url}')
                 self.stat.add_stat('download_fail')
+                page_data['fail'] = url
             self.__db.next_collection_insert_one(page_data)
 
     def __getName(self, url):

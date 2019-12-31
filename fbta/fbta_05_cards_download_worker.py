@@ -1,8 +1,14 @@
+import json
+import time
+
+import bson
+
 from fbta_global_database_manager import FBTADBManager
 from fbta_03_history_download_method import FBTAHistoryDownloaderMethod
 from fbta_main_worker import FBTAMainWorker
 from fbta_node_master import FBTANodeMaster
 from fbta_log import log
+from bson.json_util import loads
 
 
 class FBTACardsDownloadWorker(FBTAMainWorker):
@@ -26,17 +32,22 @@ class FBTACardsDownloadWorker(FBTAMainWorker):
         url = docs.get('main-link')
 
         if url != '#':
-            self.node_worker.goto_Secure(url)
-            log('>>>>', self.name, docs.get('_id'), self.node_worker.browser.driver.title)
+            # Resume System
+            if docs.get('next-downloaded') is None:
+                self.node_worker.goto_Secure(url)
+                log('>>>>', self.name, docs.get('_id'), self.node_worker.browser.driver.title)
+                bsref = bson.DBRef(self.__db.current_get_name(), bson.ObjectId( docs.get('_id')), self.__db.get_db_name())
+                data = {
+                    'history-cluster-id': str(docs.get('history-cluster-id')) + ',' + str(self.name),
+                    'url': url,
+                    'source': str(self.node_worker.browser.driver.page_source),
+                    'refer-id': docs.get('_id'),
+                    'timer-download': time.time() - self.process_timer_start,
+                    'history': bsref
+                }
+                self.__db.next_collection_insert_one(data)
 
-            data = {
-                'history-cluster-id': str(docs.get('history-cluster-id')) + ',' + str(self.name),
-                'url': url,
-                'source': str(self.node_worker.browser.driver.page_source),
-                'refer-id': docs.get('_id'),
-                'history': docs
-            }
-            self.__db.next_collection_insert_one(data)
             self.stat.add_stat('posts-counter')
+
         else:
             self.stat.add_stat('posts-broken-links')

@@ -1,0 +1,9 @@
+pymongo
+pynput
+parsel
+requests
+beautifulsoup4
+selenium
+parsel
+cryptography
+Pillow

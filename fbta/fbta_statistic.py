@@ -18,6 +18,14 @@ class FBTAStatistic:
         __stat = {'id': name, 'stat': self.__get_class_dict()}
         return str(json.dumps(__stat))
 
+    def get_worker_stat_json(self, name):
+        __stat = {'id': name, 'stat': self.__get_class_dict()}
+        return json.dumps(__stat)
+
+    def get_worker_stat_dict(self, name):
+        __stat = {'id': name, 'stat': self.__get_class_dict()}
+        return __stat
+
     def __get_class_dict(self):
         stat = {}
         for key in self.__dict__:
@@ -29,6 +37,9 @@ class FBTAStatistic:
             self.custom_stat[key] += 1
         else:
             self.custom_stat[key] = 1
+
+    def add_stat_static(self, key, value):
+        self.custom_stat[key] = value
 
     def json_to_stat(self, param):
         return json.loads(param)

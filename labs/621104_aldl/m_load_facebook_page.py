@@ -61,8 +61,7 @@ if __name__ == '__main__':
     # print(re.find_elements_by_xpath('//div[contains(@id, "month_") and not(contains(@id, "_more_"))]'))
     # print(re.selector.css('#viewport'))
 
-    average_geturl('https://m.facebook.com/me',100)
-    average_geturl('https://m.facebook.com/story.php?story_fbid=3016328265066988&substory_index=112&id=100000695314425',100)
-    average_geturl('https://www.facebook.com/fadehara/posts/3016328265066988:112',100)
+    average_geturl('https://m.facebook.com/1559410897520563',100)
+
 
 

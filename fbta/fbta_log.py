@@ -25,6 +25,7 @@ def log(*args):
         logger.log(level=99, msg=text.encode('utf8'))
 
 
+
 def log_header(*args):
     print('■' * 30)
     log(*args)

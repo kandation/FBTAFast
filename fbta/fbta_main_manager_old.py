@@ -1,6 +1,5 @@
 import copy
 import time, datetime, os
-from random import random
 from typing import List, Optional
 
 import pymongo
@@ -53,15 +52,7 @@ class FBTAMainManager(metaclass=ABCMeta):
         self.__big_loop_time = None
         self.__time_big_loop_report_time = 10
 
-        self.__stop_counter = 0
-
-        self.__stat_skip_download = 0
-
         self.__browser = None
-
-        self.__db_current_coll_cursor = None
-
-        self.__is_manager_running = True
 
         self.__initSettings()
 
@@ -114,20 +105,6 @@ class FBTAMainManager(metaclass=ABCMeta):
             return True
         return False
 
-    def __break_emergency(self):
-        is_emergency_stop = self.__emergency_stop_browser_via_file()
-        if is_emergency_stop:
-            self.__is_manager_running = False
-
-    def __break_method(self):
-        if self.__stop_counter >= self.db.clusters_num:
-            log(':mManage:  END LOOP')
-            self.__is_manager_running = False
-
-        if not self.__method_all_alive():
-            log(':mManage:  End loop by thread dead')
-            self.__is_manager_running = False
-
     def _main(self):
         self.__create_workers(self.__slave_class_name)
         self.__run_cluster()
@@ -136,16 +113,25 @@ class FBTAMainManager(metaclass=ABCMeta):
         log(':mManage: ( _)0*´¯`·.¸.·´¯`°Q(_ )  Start Main Manager')
 
         self.__init_time_event()
-        self.__set_docs_cursor()
 
-        while self.__is_manager_running:
-            self.__break_emergency()
+        while True:
+            is_emergency_stop = self.__emergency_stop_browser_via_file()
+            if is_emergency_stop:
+                break
 
-            self.__method_add_jobs()
+            self.__method_addDataToList()
+
+            __stopCouter = self.__method__addJobs()
 
             self.__show_all_waiting_job()
 
-            self.__break_method()
+            if self.__stopCounter >= self.db.clusters_num:
+                log(':mManage:  END LOOP')
+                break
+
+            if not self.__method_all_alive():
+                log(':mManage:  End loop by thread dead')
+                break
 
             self.__method_say_hello()
 
@@ -250,8 +236,36 @@ class FBTAMainManager(metaclass=ABCMeta):
     def __show_all_waiting_job(self):
         if all([w.is_waiting_job() for w in self.workers]):
             log(
-                f':mMange: ■■■■■■■ all waiting job index[{self.db.db_index}]  stopCouter[{self.__stop_counter}] '
+                f':mMange: ■■■■■■■ all waiting job index[{self.db.db_index}]  stopCouter[{self.__stopCounter}] '
                 f'lenDocs[{len(self.db.docs_list)}]')
+
+    def __method__addJobs(self):
+        time.sleep(0.05)
+        self.__stopCounter = 0
+
+        for worker_id, worker in enumerate(self.workers):
+            if worker:
+                if worker.isErrorFatal:
+                    log(':mMange: ■■■■■■■ ERROR EXIT ■■■■■■■', worker)
+                    exit()
+
+                if worker.is_waiting_job():
+                    if self.db.docs_list:
+                        jobs = self.db.docs_list.pop(0)
+                        self.db.docs_list_waiting.append(
+                            {'jid': str(jobs['_id']), 'time': time.time(), 'worker': worker.name,
+                             'worker-id': worker_id})
+
+                        worker.add_job(jobs)
+
+                        self.__stat.worker_couter_docs += 1
+                    else:
+                        self.__method_check_worker_stop(worker)
+                self.__method_remove_old_waiting_list(worker.get_last_job_finshed())
+            else:
+                print(f'mMange:{datetime.datetime.now()} Some Worker will be INIT please wait')
+                self.__method_wait_worker_until_ready()
+                print('mManage: OK Worker all run let\'s go')
 
     def __method_remove_old_waiting_list(self, id):
         search_index = self.__find_time(self.db.docs_list_waiting, 'jid', str(id))
@@ -280,7 +294,6 @@ class FBTAMainManager(metaclass=ABCMeta):
 
     def __method_check_waiting_list(self):
         for dw in self.db.docs_list_waiting:
-            # ควรเป็น Adaptive time มากกว่า เพราะเมื่อ Node เยอะ บางที่การ restart อาจใช้เวลานานขึ้น
             timeout_normal = time.time() - dw.get('time') > self.configs.timeout_waiting_list
             if timeout_normal:
                 timeout_is_real = False
@@ -293,19 +306,15 @@ class FBTAMainManager(metaclass=ABCMeta):
                           f'since [{time.time() - dw.get("time", 0)}] ago')
                     self.workers[dw.get('worker-id')].restart_browser()
 
-
-    def __method_check_worker_stop_currsor(self):
-        pass
-
     def __method_check_worker_stop(self, worker):
         # Check IS STOP cluster REALLY
-        self.__stop_counter = 0
+        self.__stopCounter = 0
         if self.db.db_index >= self.db.getCurrentCollection_num():
             if not worker.is_end():
                 log(f':mManage: manager send end job to {worker.name}')
             worker.end_job()
             if worker.is_end():
-                self.__stop_counter += 1
+                self.__stopCounter += 1
 
     def __method_check_worker_is_respond(self):
         return self.db.docs_list_waiting
@@ -331,8 +340,23 @@ class FBTAMainManager(metaclass=ABCMeta):
             return False
         return True
 
-    def __set_docs_cursor(self):
-        self.__db_current_coll_cursor = self.__db.get_current_docs()
+    def __add_docs_cursor_only(self):
+        return self.__db.get_current_docs()
+
+    def __add_docs_cursor_to_list(self) -> int:
+        if len(self.db.docs_list) < self.db.clusters_num and not self.__method_stop_add_docs_to_list_condition():
+            skipter = (2 * self.db.clusters_num) - len(self.db.docs_list)
+            log(f':mManger:log: #### Cluster skipter load [{skipter}]')
+
+            cards_temp_cursor = self.__db.get_current_docs_by_limit(self.db.db_index, skipter)
+
+
+            for card in cards_temp_cursor:
+                self.db.docs_list.append(card)
+                # Index start on [0 <= index < n]
+                self.db.db_index += 1
+            return skipter
+        return 0
 
     def __statistic_autosave(self):
         worker_stat = []
@@ -375,49 +399,3 @@ class FBTAMainManager(metaclass=ABCMeta):
             if dic[key] == value:
                 return i
         return -1
-
-    def get_docs_in_cursor(self) -> dict:
-        try:
-            skip_stack = 0
-            while True:
-                cr_doc = self.__db_current_coll_cursor.next()
-                self.db.db_index += 1
-
-                if cr_doc.get('next-downloaded') is not None or cr_doc.get('skip-donotcare') is not None:
-                    pass
-                else:
-                    if skip_stack > 0:
-                        self.__stat_skip_download += skip_stack
-                        log(f':mManager: Skip Stack {skip_stack}')
-                    break
-                skip_stack += 1
-            return cr_doc
-        except StopIteration:
-            return False
-
-    def __method_add_jobs(self):
-        time.sleep(0.4+random()/10)
-        self.__stop_counter = 0
-        for worker_id, worker in enumerate(self.workers):
-            if worker:
-                if worker.isErrorFatal:
-                    log(':mMange: ■■■■■■■ ERROR EXIT ■■■■■■■', worker)
-                    exit()
-
-                if worker.is_waiting_job():
-                    jobs = self.get_docs_in_cursor()
-                    if jobs:
-                        self.db.docs_list_waiting.append(
-                            {'jid': str(jobs.get('_id')), 'time': time.time(), 'worker': worker.name,
-                             'worker-id': worker_id})
-
-                        worker.add_job(jobs)
-
-                        self.__stat.worker_couter_docs += 1
-                    else:
-                        self.__method_check_worker_stop(worker)
-                self.__method_remove_old_waiting_list(worker.get_last_job_finshed())
-            else:
-                print(f'mMange:{datetime.datetime.now()} Some Worker will be INIT please wait')
-                self.__method_wait_worker_until_ready()
-                print('mManage: OK Worker all run let\'s go')

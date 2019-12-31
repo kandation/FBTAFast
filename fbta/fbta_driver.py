@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from parsel import Selector
 
+from fbta_log import log
 from fbta_node_master import FBTANodeMaster
 
 
@@ -21,6 +22,9 @@ class FBTADriver:
         self.__soup: BeautifulSoup = None
         self.__selector: Selector = None
         self.__request_Timeout = None
+        self.__raw_url = 'init'
+
+        self.__header = self.session.headers
 
     def start_session(self):
         self.add_cookie_from_node_master()
@@ -29,9 +33,22 @@ class FBTADriver:
     def session(self) -> requests.Session():
         return self._session
 
-    def get(self, url, stream=False) -> requests.Response:
-        print(f'>> :Driver: stream={stream} get {url} ')
-        self._respond = self._session.get(url, stream=stream, allow_redirects=True)
+    def get_headers(self):
+        return self.__header
+
+    def set_header_chrome(self):
+        self.__header = {
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36'}
+        self.session.headers.update(self.__header)
+
+    def set_headers_custome(self, headers):
+        self.session.headers.update(headers)
+
+    def get(self, url, stream=False, show_url=True) -> requests.Response:
+        self.__raw_url = url
+        if show_url:
+            log(f'>> :Driver: stream={stream} get {url} ')
+        self._respond = self._session.get(url, headers=self.__header, stream=stream, allow_redirects=True)
         if self._respond.encoding is not None:
             self.__soup = BeautifulSoup(self._respond.content, 'lxml')
             self.__selector = Selector(self._respond.text)
@@ -43,6 +60,10 @@ class FBTADriver:
 
     def get_stream(self, url):
         self._respond = self._session.get(url, allow_redirects=True)
+
+    @property
+    def raw_url(self):
+        return self.__raw_url
 
     @property
     def current_url(self):
@@ -130,7 +151,7 @@ class FBTADriver:
         return False
 
     def delete_cookie(self, name):
-        pass
+        self.session.cookies.set(name, None)
 
     def set_page_load_timeout(self, timeout):
         self.implicitly_wait(timeout)

@@ -78,4 +78,8 @@ class FBTAPhotosDownloadMethod:
                 # print('https://m.facebook.com/'+js['tl_objid'])
                 return js['photo_id']
                 # print(js)
+            if k == 'cover_photo':
+                if js.get('photo_id'):
+                    return js['photo_id']
+
         return '-1'

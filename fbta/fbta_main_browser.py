@@ -64,6 +64,7 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
     @abstractmethod
     def _check_internet_connect(self):
         pass
+
     def __has_browser_noscript(self):
         is_noscript = True if self.driver.get_cookie('noscript') is not None else False
         return is_noscript
@@ -163,11 +164,16 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
                 load_time_out_retry += 1
 
     def killdriver(self):
-        try:
+
+        print('++', type(self.driver))
+        if self.driver is not None:
             self.driver.quit()
-            log(f':Browser: [{self.name}] Driver Killed (✖╭╮✖)')
-        except Exception as e:
-            log(f':Browser: [{str(self.name)}] Driver Kill Error as {e}')
+            try:
+                log(f':Browser: [{self.name}] Driver Killed (✖╭╮✖)')
+            except:
+                log(f':Browser:  Driver Killed (✖╭╮✖)')
+
+        # log(f':Browser: [{str(self.name)}] Driver Kill Error as {e}')
 
     def __del__(self):
         if self.__test_end_killer:
@@ -214,8 +220,8 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
         return self.__is_master
 
     @property
-    def has_signal_loop(self)->bool:
-        return any([self.__signal_login,self.__signal_reload_content, self.__signal_need_restart_browser])
+    def has_signal_loop(self) -> bool:
+        return any([self.__signal_login, self.__signal_reload_content, self.__signal_need_restart_browser])
 
     @property
     def has_signal_once(self) -> bool:

@@ -20,7 +20,7 @@ class FBTAConfigs:
         self.__dir_seq_03_photoScreenshot = '03_photo_ss'
         self.__dir_seq_03_photos = '03_photos'
 
-        self.timeout_waiting_list = 10
+        self.timeout_waiting_list = 50
 
 
 

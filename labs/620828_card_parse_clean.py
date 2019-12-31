@@ -142,7 +142,8 @@ if __name__ == '__main__':
     client = MongoClient()
     # db = client.get_database('fbta_20190827_1544')
     # db = client.get_database('fbta_20190619_0031')
-    db = client.get_database('fbta_20190827_2027')
+    # db = client.get_database('fbta_20190827_2027')
+    db = client.get_database('fbta_20191111_1236')
     collection = db.get_collection('01_activity_page')
 
     q_docs = collection.find()

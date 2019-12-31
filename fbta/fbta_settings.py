@@ -97,6 +97,8 @@ class FBTASettings:
 
     @cluster_num.setter
     def cluster_num(self, num):
+        if num != 10:
+            print(':setting: Recommended cluster=10')
         self.__cluster_num = int(num) if int(num) <= self.__cluster_limit else self.__cluster_limit
         try:
             self.__cluster_num = int(num) if int(num) <= self.__cluster_limit else self.__cluster_limit

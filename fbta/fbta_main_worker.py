@@ -1,9 +1,10 @@
 import copy
 import json
+import time
 from threading import Thread
 from typing import List, Optional
 from abc import ABCMeta, abstractmethod
-
+from fbta_difftime import FBTADifftime
 import pymongo
 from selenium.common.exceptions import WebDriverException
 
@@ -86,6 +87,10 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
 
         self.slave_class_name = ''
         self.__url = self.__masterNode.url
+
+        self.process_timer_start = 0
+        self.process_timer_sum = 0
+        self.process_timer_n = 0
 
     def url(self, url) -> str:
         return self.__url.getUrlWithMain(url)
@@ -248,7 +253,6 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
             #     self.__init_browser()
             #     self.__stat.worker_browser_died += 1
 
-
             except BaseException as e:
                 log(f'mWorker: ???? [{self.name}] Thread Die by something [{e}]')
                 if self.__loop_try_agin > 10:
@@ -256,8 +260,6 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
                 else:
                     self.download_current.restart_if_thread_die()
                 self.__loop_try_agin += 1
-
-
 
         log(f':mWorker:\t\t>> {self.slave_class_name} [{self.name}] is Out Loop')
 
@@ -271,13 +273,16 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
         self.killBrowser()
         self.__stop_thread = True
 
+    def stat_autosave_value(self):
+        return self.__stat.get_worker_stat_dict(self.name)
+
     def __is_must_running(self):
         return self.__slave_is_end and not self.download_current.has_download_url()
 
     def __method_normal_worker_run(self):
         if self.download_current.has_download_url():
             self.__slave_is_waiting_job = False
-
+            self.process_timer_start = time.time()
             log(':mWorker: Add to slave method', self.download_current.doc['_id'])
 
             self.slave_method(self.download_current.get())
@@ -285,6 +290,16 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
             self.download_current.end_download()
 
             self.__stat.history_couter_success += 1
+            finish_time = time.time()
+            dift_process_time = finish_time - self.process_timer_start
+            self.process_timer_sum += dift_process_time
+            self.process_timer_n += 1
+
+            average_process_time = self.process_timer_sum / self.process_timer_n if self.process_timer_n > 0 else 0
+            self.__stat.add_stat_static('avr-time', average_process_time)
+            log(f':mWorker: Stat: {self.name} spend '
+                f'{FBTADifftime.time2string(dift_process_time)} '
+                f'({dift_process_time}) AVR={average_process_time}')
 
         else:
             self.__slave_is_waiting_job = True
