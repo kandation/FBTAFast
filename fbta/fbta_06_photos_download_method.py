@@ -18,7 +18,6 @@ from urllib.parse import urljoin
 import html
 
 
-
 class FBTAPhotosDownloadMethod:
     NONE = None
 
@@ -42,7 +41,7 @@ class FBTAPhotosDownloadMethod:
                     if match:
                         ref_url = match.groups()[0].strip()
                         if 'http' not in ref_url[:10]:
-                            print('dddddddddddddddddddddddd',ref_url)
+                            print('-----[Photo-Method] http not in ref url', ref_url)
 
                             url = urljoin(url, html.unescape(ref_url))
                         else:
@@ -58,7 +57,7 @@ class FBTAPhotosDownloadMethod:
         bs = Selector(doc.get('source', ''))
         dataft_list: List[Optional[Selector]] = bs.css("div[data-ft]")
         if len(dataft_list) == 0:
-            print('Error DOCS_NONE_FT', 'https://m.facebook.com' + doc['url'])
+            log('Error DOCS_NONE_FT', 'https://m.facebook.com' + doc['url'])
             # if 'story' in doc['url']:
             #     print(doc['source'])
         else:

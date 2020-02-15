@@ -2,7 +2,7 @@ import datetime
 import os
 from typing import Any
 
-from fbta_keyinterupt import FBTAKeyInterupt
+# from fbta_keyinterupt import FBTAKeyInterupt
 
 
 class FBTASettings:
@@ -34,10 +34,12 @@ class FBTASettings:
         self.dir_path_detail = self.DIR_DETAIL_NEW_ON_DAY
         self.is_auto_dbname = False
 
+        self.use_resume = False
+
         self.run_fast_all = False
         self.run_fast_cluster_info = False
 
-        self.__keykill = FBTAKeyInterupt()
+        # self.__keykill = FBTAKeyInterupt()
 
         self.fast_worker = False
 
@@ -69,9 +71,9 @@ class FBTASettings:
     def kill_driver_on_end(self, cond: bool):
         self.__killdriveronend = bool(cond)
 
-    @property
-    def keykill(self) -> FBTAKeyInterupt:
-        return self.__keykill
+    # @property
+    # def keykill(self) -> FBTAKeyInterupt:
+    #     return self.__keykill
 
     @property
     def user_information(self) -> dict:

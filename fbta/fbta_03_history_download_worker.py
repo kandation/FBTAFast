@@ -5,7 +5,7 @@ from fbta_node_master import FBTANodeMaster
 from fbta_log import log
 
 
-class   FBTAHistoryDownloadWorker(FBTAMainWorker):
+class FBTAHistoryDownloadWorker(FBTAMainWorker):
     def __init__(self, node_master: FBTANodeMaster, db: FBTADBManager):
         self.__node_master = node_master
         self.__db = db
@@ -26,11 +26,12 @@ class   FBTAHistoryDownloadWorker(FBTAMainWorker):
         self.node_worker.goto_Secure(url)
         pageCounter = 0
         while True:
-            print(self.name, self.__activity.hasTimeline())
+            print(f':History_Worker: {self.name} isFound Timeline={self.__activity.hasTimeline()}')
             if self.__activity.hasTimeline():
                 if self.__activity.getPage_NextMoreLoad(True, self.name):
                     self.__activity.addPageToDb()
-                    ss = self.node_worker.screenshot_fullpage(self.__activity.page['title'], self.configs.dir_seq_01_Activity)
+                    ss = self.node_worker.screenshot_fullpage(self.__activity.page['title'],
+                                                              self.configs.dir_seq_01_Activity)
                     if ss:
                         self.stat.add_stat('hdw_screenshot_success')
                     else:

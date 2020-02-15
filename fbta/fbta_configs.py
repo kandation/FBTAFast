@@ -11,6 +11,7 @@ class FBTAConfigs:
         self.__db_collection_card_name = '02_card_page'
         self.__db_collection_post_name = '03_post_page'
         self.__db_collection_photo_name = '04_photo_page'
+        self.__db_collection_05_album_count_name = '05_album_count'
         self.__time_retry_addCookie = 10
         self.__time_retry_connectError = 30
         self.time_master_lock_cooldown = 2
@@ -59,6 +60,10 @@ class FBTAConfigs:
     @property
     def db_collection_04_photo_name(self) -> str:
         return self.__db_collection_photo_name
+
+    @property
+    def db_collection_05_album_count_name(self) -> str:
+        return self.__db_collection_05_album_count_name
 
     @property
     def db_collection_stat(self) -> str:

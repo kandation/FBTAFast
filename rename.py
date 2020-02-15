@@ -14,6 +14,7 @@ if '$START_FBTA_TEST$' in c:
     for i in p:
         if '$START_FBTA_TEST$' in i:
             logfile = str(i).split('/')[-1]
+            print(f'Renamed {logfile}')
 
 if logfile:
     os.rename('log_temp.txt', f'log_{logfile}_w_{random.randint(1,10)}.txt')

@@ -29,6 +29,8 @@ class FBTADBManager:
 
         self.__db_cards_temp = List[Optional[pymongo.cursor.Cursor]]
 
+        self.__find_condition = {}
+
         if self.__collection_list:
             current_coll = collection_list[0] if collection_list[0] else 'error_collection'
             next_coll = collection_list[1] if collection_list[1] else 'error_collection'
@@ -45,6 +47,8 @@ class FBTADBManager:
             self.__prop_next_collection_name: str = next_coll
 
             self.__data_list: List[Optional[pymongo.cursor.Cursor]] = []
+
+            self.__cuurent_cursor_new = None
 
             self.current_num = self.getCurrentCollection_num()
 
@@ -69,13 +73,21 @@ class FBTADBManager:
         if self.getCurrentCollection_num() < 0:
             raise Exception(self.__prop_current_collection_name, 'Database is Empty')
 
+    def get_find_docs_count(self) -> int:
+        self.current_num = self.__current_collection.count_documents(self.__find_condition)
+        return self.current_num
+
     def get_current_docs_by_limit(self, start, length) -> pymongo.cursor.Cursor:
         log(f':DBMange: \t■■■■■■■ DB Load with startPage=[{start}] to [{start + length - 1}] with[{length}]')
         return self.__current_collection.find(no_cursor_timeout=True).skip(start).limit(length)
 
+    def set_custom_find(self, cond: dict):
+        self.__is_use_custom_find = True
+        self.__find_condition = cond
+
     def get_current_docs(self) -> pymongo.cursor.Cursor:
         log(f':DBMange: \t■■■■■■■ DB Load Full')
-        return self.__current_collection.find(no_cursor_timeout=True)
+        return self.__current_collection.find(self.__find_condition, no_cursor_timeout=True)
 
     def current_insert_one(self, data: dict):
         return self.__current_collection.insert_one(data)

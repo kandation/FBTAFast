@@ -46,11 +46,14 @@ class FBTAPhotosDownloadWorker(FBTAMainWorker):
             self.browser.goto(url)
             # print('------------------')
 
+            timer_download = time.time()
+
             source = self.browser.driver.page_source
             page_data = {
-                'url':url,
+                'url': url,
                 'cluster-history': self.name,
-                'time': int(time.time()),
+                'time': int(timer_download),
+                'time-download': -1,
                 'source': source,
                 'history_docs': docsOnces}
 
@@ -81,7 +84,7 @@ class FBTAPhotosDownloadWorker(FBTAMainWorker):
                     'filename': imgName,
                     'img-url': response.url,
                     'header': str(response.headers),
-                    'org-link':link
+                    'org-link': link
                 }
                 self.__db.next_collection_insert_one(page_data)
                 del response
@@ -93,6 +96,7 @@ class FBTAPhotosDownloadWorker(FBTAMainWorker):
                 log(f':PDW: detect CONTENT_NOT_FOUND between download Photos @ {url}')
                 self.stat.add_stat('download_fail')
                 page_data['fail'] = url
+            page_data['time-download'] = time.time() - timer_download
             self.__db.next_collection_insert_one(page_data)
 
     def __getName(self, url):

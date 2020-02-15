@@ -66,30 +66,42 @@ if __name__ == '__main__':
         อ่านต่อใน 620825 daraft_parse
         ------
     """
-    for iii in range(5):
-        url_test = 'https://m.facebook.com/story.php?story_fbid=3062224330477381&substory_index=89&id=100000695314425'
-        # url_test = 'https://m.facebook.com/fadehara/posts/3062224330477381:89'
-        # url_test = 'https://www.facebook.com/fadehara/posts/3062224330477381:89'
-        # re.delete_cookie('noscript')
-        average_geturl(url_test, 10)
+    # for iii in range(5):
+    #     url_test = 'https://m.facebook.com/story.php?story_fbid=3062224330477381&substory_index=89&id=100000695314425'
+    #     # url_test = 'https://m.facebook.com/fadehara/posts/3062224330477381:89'
+    #     # url_test = 'https://www.facebook.com/fadehara/posts/3062224330477381:89'
+    #     # re.delete_cookie('noscript')
+    #     average_geturl(url_test, 10)
+    #
+    #     # re.get(url_test)
+    #     # save_html('story_python', re.page_source)
+    #     # print(re.session.headers)
+    #
+    #     url_test = 'https://m.facebook.com/fadehara/posts/3062224330477381:89'
+    #     average_geturl(url_test, 10)
+    #     print('-'*50)
+    #     # exit()
 
-        # re.get(url_test)
-        # save_html('story_python', re.page_source)
-        # print(re.session.headers)
 
-        url_test = 'https://m.facebook.com/fadehara/posts/3062224330477381:89'
-        average_geturl(url_test, 10)
-        print('-'*50)
-        # exit()
+    """
+    การจะหา album count วิธีที่ดีที่สุดคือ www-url ลบ no-script ทิ้ง จะใช้ header ของใครก็ได้
+    แนะนำ chrome/firefox จากนั้นทำงาน pasre html ด้วยคลาส hidden_elem เพื่อปล๊ดคอมเม้น
+    แต่จะลองใช้ (?<=[\>])(\+[0-9]+)(?=[\<]) เพื่อเอาเฉพาะตัวเลขก็ได้
+    """
 
-    # # re.delete_cookie('noscript')
-    # re.set_header_chrome()
+    url_test = 'https://www.facebook.com/story.php?story_fbid=3062224330477381&substory_index=89&id=100000695314425'
+    # url_test = 'https://www.facebook.com/story.php?story_fbid=3181054815260998&substory_index=1&id=100000695314425'
+    # url_test = 'https://www.facebook.com/story.php?story_fbid=2071698746196616&substory_index=0&id=100000695314425'
+
+    re.delete_cookie('noscript')
+    re.set_header_chrome()
+    # re.set_header_firefox()
     # headers_opera = {'user-agent':'Opera/9.80 (Windows NT 6.0) Presto/2.12.388 Version/12.14'}
     # re.set_headers_custome(headers_opera)
-    # average_geturl(url_test, 10)
-    # re.get(url_test)
+    average_geturl(url_test, 10)
+    re.get(url_test)
     # print(re.session.headers)
-    # print(re.get_headers())
+    print(re.get_headers())
     # print(re.get_cookies())
     # # print(re.current_url)
     # # print(re.page_source)
