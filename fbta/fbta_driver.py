@@ -41,6 +41,11 @@ class FBTADriver:
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36'}
         self.session.headers.update(self.__header)
 
+    def set_header_firefox(self):
+        self.__header = {
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0'}
+        self.session.headers.update(self.__header)
+
     def set_headers_custome(self, headers):
         self.session.headers.update(headers)
 
@@ -73,7 +78,7 @@ class FBTADriver:
 
     @property
     def page_source(self):
-        return str(self._respond.content, encoding=self._respond.encoding)
+        return str(self._respond.content.decode(encoding=self._respond.encoding, errors='ignore'))
 
     def get_title(self):
         # return self.__soup.find('title').text

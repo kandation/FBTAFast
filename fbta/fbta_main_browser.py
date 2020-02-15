@@ -171,13 +171,13 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
             try:
                 log(f':Browser: [{self.name}] Driver Killed (✖╭╮✖)')
             except:
-                log(f':Browser:  Driver Killed (✖╭╮✖)')
+                log(f':Browser: [SOMETHING]  Driver Killed (✖╭╮✖)')
 
         # log(f':Browser: [{str(self.name)}] Driver Kill Error as {e}')
 
-    def __del__(self):
-        if self.__test_end_killer:
-            self.killdriver()
+    # def __del__(self):
+    #     if self.__test_end_killer:
+    #         self.killdriver()
 
     @abstractmethod
     def _get_new_url(self, url):

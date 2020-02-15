@@ -8,15 +8,23 @@ from pymongo import MongoClient
 fb_url_m = 'https://m.facebook.com/'
 fb_url_w = 'https://www.facebook.com/'
 
+db_name = 'fbta_20200202_1816'
+
+
+def find_max_dataft(dataft_list):
+    max_indexx = [len(x.attrib['data-ft']) for x in dataft_list]
+    max_index = max_indexx.index(max(max_indexx))
+    return dataft_list[max_index].attrib['data-ft']
+
 
 def dataparse(ft, doc):
     js = json.loads(ft, encoding='utf8')
     k = js.get('attached_story_attachment_style')
     ppps = ['photo', 'album', 'share', 'video_inline', 'cover_photo', 'animated_image_share', 'profile_media',
             'new_album', 'page_insights', 'animated_image_video', 'video_direct_response', 'commerce_product_item',
-            'event', 'video_share_highlighted', 'avatar', 'native_templates', 'note']
+            'event', 'video_share_highlighted', 'avatar', 'native_templates', 'note','fallback']
     attmaen_othrt = ['unavailable', 'multi_share', 'photo_link_share', 'group_sell_product_item', 'question', 'video',
-                     'file_upload', 'story_list','image_share','group']
+                     'file_upload', 'story_list', 'image_share', 'group']
     if k in ppps and k is not None:
         if k == 'photo':
             pass
@@ -38,7 +46,7 @@ def dataparse(ft, doc):
             ข้อยากของอันนี้คือ เราไม่มีทางรู้ว่า รูปแบบที่มันมานั้นเป็นอัลบัมแปบบ in post หรือ อัลบัมแยกเลย
             ** ปล เนื่องจากเรารู้ว่ามันคืออัลบัมจากตอนเก็บ storyแล้ว ในนั้นจะมีข้อมูลรูปภาพกับลิงค์อยู่ซึ่ง ตัวลิงก์เองจะบอกประภทไว้แล้ว
             ให้เราทำการ parse ลิงก์นั้นหาคำ pcb , oa , a  จากนั้นทำการใช้ลิกง์ด้านล่างเพื่ือจัดกลุ่มหาจำนวน
-            
+
             ** แต่มันก็มีข้อสงเกตนิดๆว่า ขั้นตอนรวมกันทั้งหมดอาจจะใช้เวลานาน สุดท้ายแล้ว การเสีย 3 วิจะเป็นทางเลือกที่ดีที่สุดหรือไม่
             อาจจะต้องมีการหาจำนวนที่แน่นอน เป็นอัตราส่วน
             -----
@@ -47,21 +55,26 @@ def dataparse(ft, doc):
             https://m.facebook.com/media/set/?set=oa.2970320783192191
             """
             pass
-            # if len(js['photo_attachments_list']) <= 4:
-            #     if js['top_level_post_id'] != js['tl_objid']:
-            #         pass
-            #         print('https://m.facebook.com/' + js['tl_objid'])
-            #         print('https://m.facebook.com/' + js['top_level_post_id'])
-            #         pprint(js)
-            #         # mf_story_key == top_level_post_id == throwback_story_fbid
-            #         #print('https://m.facebook.com/'+doc['url'],'https://m.facebook.com/' + js['top_level_post_id'],'https://m.facebook.com/' + js['tl_objid'], js)
-            #     else:
-            #         if js.get('page_insights') is None:
-            #             pass
-            #             # ไม่ใช่เพจ ส่วนใหญ่เป็น iamges group
-            #             # เป็นได้ทั้งโพสส่วนตัว และในกลุ่ม มักจะไปโผล่โพสที่มีรายละเอียด
-            #             # print('https://m.facebook.com/' + js['tl_objid'])
-            #             # pprint(js)
+            try:
+                if len(js['photo_attachments_list']) <= 4:
+                    if js['top_level_post_id'] != js['tl_objid']:
+                        pass
+                        # print(f"{fb_url_m}{js['tl_objid']} --- {fb_url_w}{doc['url']}")
+                        # print('https://m.facebook.com/' + js['top_level_post_id'])
+                        # pprint(js)
+                        # mf_story_key == top_level_post_id == throwback_story_fbid
+                        #print('https://m.facebook.com/'+doc['url'],'https://m.facebook.com/' + js['top_level_post_id'],'https://m.facebook.com/' + js['tl_objid'], js)
+                    else:
+                        if js.get('page_insights') is None:
+                            pass
+                            # ไม่ใช่เพจ ส่วนใหญ่เป็น iamges group
+                            # เป็นได้ทั้งโพสส่วนตัว และในกลุ่ม มักจะไปโผล่โพสที่มีรายละเอียด
+                            # print('https://m.facebook.com/' + js['tl_objid'])
+                            # pprint(js)
+            except:
+                pass
+                # print(doc)
+
 
         if k == 'cover_photo':
             pass
@@ -70,67 +83,71 @@ def dataparse(ft, doc):
             # print(f'{fb_url}{js.get("top_level_post_id")}',ft)
 
         if k == 'new_album':
-            pass
-            if len(js['photo_attachments_list']) <= 4:
-                if js['top_level_post_id'] != js['tl_objid']:
-                    pass
-                    print('https://m.facebook.com/' + js['tl_objid'], end=' ------ ')
-                    print('https://m.facebook.com/' + js['top_level_post_id'])
+            try:
+                if len(js['photo_attachments_list']) <= 4:
+                    if js['top_level_post_id'] != js['tl_objid']:
+                        pass
+                        '''จำไม่ได้ว่าวิเคราะห์อะไร'''
+                        # print('https://m.facebook.com/' + js['tl_objid'], end=' ------ ')
+                        # print('https://m.facebook.com/' + js['top_level_post_id'])
 
-            # """throwback_story_fbid คือ โพสต้นฉบับ // top_level_post_id คือโพสของ Story หรือโพสหลักที่เรา like"""
-            # """บางที่ประเภท New Album อาจจะหายไป ทำให้เกิดโพสสาบสูญ สามารถตามที่ tag รูป เพื่อพิสูจน์ หรืออาจจะหา story_fbid เพื่อไปอัลบัมต้น"""
-            # """tl_objid น่าจะไปที่อัลบัมตรงกว่า"""
-            # """ยังไม่เคยเจอแบบเป็น album ขของ Groups"""
-            # print(f'{fb_url}{js.get("top_level_post_id")} / {fb_url}{js.get("throwback_story_fbid")}',ft)
-            # if len(js.get('photo_attachments_list')) <= 4:
-            #     print(f'{fb_url}{js.get("tl_objid")}' )
-            # if js.get('top_level_post_id') == '2675550275811457':
-            #     pass
-            #     # pprint(js)
-            #
-            # if js.get('page_id') is None:
-            #     """หมายถึง ถ้าอัลบัมนั้น ถูกแชร์โดยผู้ใช้ ไม่ใช้ เพจ"""
-            #     """tl_objid ไม่ได้หมายความว่าเป็นลิงก์ต้นฉบับ ฉนั้นให้ทำการหา original_content_id"""
-            #     if js.get('original_content_id') is not None:
-            #         print(f'{fb_url}{js.get("tl_objid")}', js)
+                # """throwback_story_fbid คือ โพสต้นฉบับ // top_level_post_id คือโพสของ Story หรือโพสหลักที่เรา like"""
+                # """บางที่ประเภท New Album อาจจะหายไป ทำให้เกิดโพสสาบสูญ สามารถตามที่ tag รูป เพื่อพิสูจน์ หรืออาจจะหา story_fbid เพื่อไปอัลบัมต้น"""
+                # """tl_objid น่าจะไปที่อัลบัมตรงกว่า"""
+                # """ยังไม่เคยเจอแบบเป็น album ขของ Groups"""
+                # print(f'{fb_url}{js.get("top_level_post_id")} / {fb_url}{js.get("throwback_story_fbid")}',ft)
+                # if len(js.get('photo_attachments_list')) <= 4:
+                #     print(f'{fb_url}{js.get("tl_objid")}' )
+                # if js.get('top_level_post_id') == '2675550275811457':
+                #     pass
+                #     # pprint(js)
+                #
+                # if js.get('page_id') is None:
+                #     """หมายถึง ถ้าอัลบัมนั้น ถูกแชร์โดยผู้ใช้ ไม่ใช้ เพจ"""
+                #     """tl_objid ไม่ได้หมายความว่าเป็นลิงก์ต้นฉบับ ฉนั้นให้ทำการหา original_content_id"""
+                #     if js.get('original_content_id') is not None:
+                #         print(f'{fb_url}{js.get("tl_objid")}', js)
+            except:
+                pass
+                # print(doc)
 
         if k == 'page_insights':
             pass
             # print(js )
 
-        if k =='avatar':
+        if k == 'avatar':
             pass
             # print(js)
     else:
         pass
-        # if k is not None:
-        #     if k not in attmaen_othrt:
-        #         print(js)
+        if k is not None:
+            if k not in attmaen_othrt:
+                print(js)
 
 
 if __name__ == '__main__':
     client = MongoClient()
-    # db = client.get_database('fbta_20191111_1236')
-    # db = client.get_database('fbta_20191114_1901_full')
-    # db = client.get_database('fbta_20191029_0138')
-    db = client.get_database('fbta_20200112_1305')
+    db = client.get_database(db_name)
     collection = db.get_collection('03_post_page')
 
-    pppppp = collection.find({})
-    for doc in pppppp:
+    docs_post = collection.find()
+
+    for doc in docs_post:
         bs = Selector(doc.get('source', ''))
         dataft_list: List[Optional[Selector]] = bs.css("div[data-ft]")
+
         if len(dataft_list) == 0:
-            """
-            อาทิเช่น note
-            """
-            # print(dataft_list)
-            # print('https://m.facebook.com' + doc['url'])
-            if 'story' in doc['url']:
-                print(doc)
-                # print(doc['source'])
+            '''อาทิเช่น note'''
+            pass
+            #
+            # # print(dataft_list)
+            # # print('https://m.facebook.com' + doc['url'])
+            # if 'story' in doc['url']:
+            #     # print(doc)
+            #     # print(doc['source'])
 
         else:
-            max_indexx = [len(x.attrib['data-ft']) for x in dataft_list]
-            max_index = max_indexx.index(max(max_indexx))
-            dataparse(dataft_list[max_index].attrib['data-ft'], doc)
+            dataft = find_max_dataft(dataft_list)
+            # print(dataft)
+            dataparse(dataft, doc)
+

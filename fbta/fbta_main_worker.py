@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 import time
 from threading import Thread
 from typing import List, Optional
@@ -17,9 +18,8 @@ from fbta_log import log
 class FBTAVariableDownload:
     def __init__(self):
         self.doc = None
-        self.__loop_try_agin = 0
-
         self.__prev_doc = None
+
 
     def new_download(self, doc: pymongo.cursor.Cursor):
         log('add new dowload', doc['_id'])
@@ -67,6 +67,8 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
 
         self.__slave_is_end = False
         self.__slave_is_waiting_job = True
+        self.__is_manager_running = True
+        self.__loop_try_agin = 0
 
         Thread.__init__(self)
 
@@ -159,7 +161,7 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
                 try:
                     log(':mWorker: Run After Init')
                     self.after_init()
-                except:
+                except BaseException as e:
                     log(f':mWorker:■■■■■■■■■■■■■■■■■■■■■■■■ def after_init() method is ERROR ■■■■■■■■■■■■■■■■■■■■■■■■')
                     self.__stop_thread = True
                     exit()
@@ -184,8 +186,25 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
                 try_agin += 1
         return ret
 
-    def __emergency_stop(self):
-        pass
+    def __emergency_stop_browser_via_file(self):
+        import datetime
+        filename = f'./emergency_worker_{self.name}_stop.stop'
+        if os.path.exists(filename):
+            print(f':mMange: ■■■■■ EMERGENCY STOP ■■■■■■\n'
+                  f'         ■■■ {datetime.datetime} ■■■\n'
+                  f'         ■■■■■■■■■■■■■■■■■■■■■■■■■■■\n')
+            try:
+                os.remove(filename)
+            except:
+                print('Remove Emergency file error')
+            return True
+        return False
+
+    def __break_emergency(self):
+        is_emergency_stop = self.__emergency_stop_browser_via_file()
+        if is_emergency_stop:
+            self.__is_manager_running = False
+
 
     def __restart_variable(self):
         self.__slave_is_waiting_job = True
@@ -242,6 +261,9 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
         self.is_ready = True
 
         while not self.__is_must_running():
+            self.__break_emergency()
+            if not self.__is_manager_running:
+                break
             # TODO DONT Forget try-except to protect
             # self.__method_normal_worker_run()
             try:
