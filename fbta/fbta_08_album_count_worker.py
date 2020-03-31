@@ -21,7 +21,7 @@ class FBTAAlbumCountWorker(FBTAMainWorker):
         # self.__activity: FBTAHistoryDownloaderMethod = FBTAHistoryDownloaderMethod.NONE
         self.__photos_method: FBTAAlbumCountMethod = FBTAAlbumCountMethod.NONE
 
-        self.REGX_PATTERN = '(?<=[\>])(\+[0-9]+)(?=[\<])'
+        self.REGX_PATTERN = '(?<=[\>])(\+[0-9,]+)(?=[\<])'
 
     def after_init(self):
         """Read instruction in Lab expr"""

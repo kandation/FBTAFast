@@ -34,8 +34,8 @@ if __name__ == '__main__':
     }
 
     print(session.cookies)
-    exit()
-    #
+
+
     # url = "https://touch.facebook.com/media/set/?set=oa.2970320783192191"
     #
     #
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     # print(bs.prettify())
     exit()
 
-    with open('labs/620902_albumdl/test_case/6209021742_timeline.js', mode='r') as fo:
+    with open('Labs/620902_albumdl/test_case/6209021742_timeline.js', mode='r') as fo:
         data = fo.read()
 
     js_obj =data

@@ -4,7 +4,7 @@ import re
 from urllib.parse import unquote
 import bs4
 
-with open('./labs/test.txt', mode='r') as fo:
+with open('./Labs/test.txt', mode='r') as fo:
     text = fo.read()
 
 text = text.replace('false', 'False')

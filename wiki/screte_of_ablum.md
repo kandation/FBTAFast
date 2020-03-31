@@ -62,3 +62,29 @@ oa = ??
 แน่นอนว่า กดเข้าไปดูรูปภาพนใน www-url  เลย แล้วก็สั่งเกตเอา
 
 จากนั้น ให้ลองดูว่ามันจะสามารถโหลดด้วยกระบวนการใดได้บ้าง lazy load หรือต้องใช้ static
+
+# รูปภาพจากกลุ่ม
+เวลามีคนโฟสรูปในกลุ่ม ส่วนใหญ่จะเป็นการโพสแบบ pcb คือโพสเดียว ไม่ได้สร้างอัลบัม แต่จะแยกพวกนั้นออกจาก page post ยังไงละ
+
+เนืองจากมันไม่มี `page_insights` tag แต่จะมีสิ่งหนึ่งปรากฏออกมาแทนคือ `"story_location" : NumberInt(6),` ซึ่งสามารถระบุตัวตนได้
+~~~~
+6 หมายถึง pcb จากกลุ่ม
+9 หมายถึง มาจาก page แต่จะเป็นประเภทไหน ต้องไปแงะอีก tag 
+~~~~
+
+# กระบวนการแบบเต็ม
+แนะนำตัวอย่างของ (2563-02-18)
+- https://m.facebook.com/PixivNiconicoGazou/photos/?tab=album&album_id=1345937708837056&_rdr
+
+หากเปิดผ่าน Chrome Header คุณจะเจอ ajax load ในหน้าแรก จะมีการเตรียม data ไว้แล้วผ่าน tag `<script>require("TimeSlice").g`
+สามารถ หา id รูปชุดแรกมาใช้เลย
+
+ถ้าเปิrowser จะมี tag เพื่อน load see more อยู่ซึ่ง มันจะเรียก data ที่ uri ด้านหลัง 
+~~~~json
+{
+id:"m_more_photos"
+},href:"/photos/pandora/?album_token=a.1345937708837056&cursor=1424249577672535&impression_source=54",proximity_pages:5,persist_on_reload:
+~~~~
+
+สามารถเข้าถึงแบบเต็ม คือ 
+- https://m.facebook.com/photos/pandora/?album_token=a.1345937708837056&cursor=1424249577672535&impression_source=54
