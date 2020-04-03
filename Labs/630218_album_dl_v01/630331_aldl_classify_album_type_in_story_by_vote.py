@@ -42,7 +42,9 @@ def find_possible_album_id(posible_type: list):
     album_id_from_vote = max((k.count(x), x) for x in set(k))[1]
     return album_id_from_vote
 
-i=0
+is_album_sure = 0
+is_not_album = 0
+
 if __name__ == '__main__':
     fb_url_w = 'https://m.facebook.com'
 
@@ -50,17 +52,21 @@ if __name__ == '__main__':
     เอาจริงๆ เพื่อประสิทธิภาพแล้ว การค้นหาแบบนี้ ค่อนข้างไวที่เดียวเลย แต่ว่า
     
     ::สมบูรณ์แล้ว 630331
+    - ควรมีการกรองว่าเป็นอัลบัมจริงรึเปล่าจากแท๊กก่อน ไม่ควรใช้ widecard เพราะมันจะเหมารวม
+    พวกรูปเดียวที่มาจากอัลบัมด้วย
     """
     lsn = {}
 
     db_name = 'fbta_20200202_1816'
     # db_name = 'fbta_20200331_0107'
+    db_name = 'fbta_20200402_0208'
 
     client = MongoClient()
     db = client.get_database(db_name)
     collection = db.get_collection('03_post_page')
 
-    key = {'dataft.dataft-type': {'$exists': True}}
+    # key = {'dataft.dataft-type': {'$exists': True}}
+    key = {}
     docs_album = collection.find(key)
 
     REG_PAT_A = '[^o]a\.[0-9]{13,}'
@@ -78,7 +84,8 @@ if __name__ == '__main__':
     for doc in docs_album:
         data_for_insert = {'data-album':
             {
-                'album-type': doc.get('dataft').get('dataft-type'),
+                # 'album-type': doc.get('dataft').get('dataft-type'),
+                'album-type': 'temp',
                 'album-cluster': {'type': 'n/a', 'img': {}},
                 'album-id': 'n/a'
             }
@@ -103,16 +110,51 @@ if __name__ == '__main__':
         if sum_bool_duplicate_patterns == 0:
             type_album = 'video/maybe'
             print(find_list_check)
-            # สว่นมากจะเป็นวีดีโอ แต่บางที่ก็อาจจะเป็นเพราะผู้ใช้ถูกลบก็ได้
-            # แต่ถ้าจะให้ทำอะไรก็คงเว้นวางไว้รอวิธีการดูดวีดีโอ เพราะวีดีโอจากนี่ คุณภาพต่ำมาก
-            print(fb_url_w+doc.get('url'))
-            sel = Selector(page_source)
-            print(page_source)
-            img_video = sel.css('img[alt*="video"]')
-            print(img_video)
+
+            if 'video' in page_source:
+                print('+V++++', fb_url_w + doc.get('url'))
+
+            # sel = Selector(page_source)
+            # alk = sel.css('a')
+            # print(page_source)
+            # img_video = sel.css('img[alt*="video"]')
+            # print(img_video)
+            # try:
+            #     for ak in alk:
+            #         if '.mp' in ak.attrib.get('href'):
+            #             pass
+            #             print(ak.attrib.get('href'))
+            # except:
+            #     print(page_source)
+            #     print('+V++++', fb_url_w + doc.get('url'))
+            #
+            # if not '/video_redirect/' in page_source and 'video' in page_source:
+            #     pass
+            #     # sel = Selector(page_source)
+            #     # alk = sel.css('a')
+            #     # # print(page_source)
+            #     # img_video = sel.css('img[alt*="video"]')
+            #     # try:
+            #     #     for ak in alk:
+            #     #         if '.mp' in ak.attrib.get('href'):
+            #     #             pass
+            #     #             # print(ak.attrib.get('href'))
+            #     # except:
+            #     #     print(page_source)
+            #     #     print('+V++++', fb_url_w + doc.get('url'))
+            #     # การคัดแยกแบบสองขั่นตอนทำให้กรองรูปภาพที่เป็นวีดีโอได้เลย
+            #     # เช่นพวกที่มีแท็ก "photo_id":"447209306171887"
+            #     # print('+V',fb_url_w + doc.get('url'))
+            # if '/photo.php' in page_source:
+            #     pass
+            #     # print('+P', fb_url_w + doc.get('url'))
+            #     # print(img_video)
+            # is_not_album += 1
+            # print('+V++++', fb_url_w + doc.get('url'))
 
         elif sum_bool_duplicate_patterns == 1:
             type_album = find_possible_type(find_list_check, bool_duplicate_patterns)
+            is_album_sure += 1
 
         else:
             sel = Selector(page_source)
@@ -124,6 +166,7 @@ if __name__ == '__main__':
 
             bool_duplicate_patterns = [len(find_list_check.get(x)) > 0 for x in find_list_check]
             type_album = find_possible_type(find_list_check, bool_duplicate_patterns)
+            is_album_sure += 1
 
         data_for_insert['data-album']['album-cluster']['type'] = type_album
 
@@ -132,17 +175,18 @@ if __name__ == '__main__':
             album_id = find_possible_album_id(find_list_check[type_album])
             data_for_insert['data-album']['album-cluster']['img'] = find_list_check
             data_for_insert['data-album']['album-id'] = album_id
-            if str(album_id) in lsn:
-                lsn[str(album_id)] += 1
-            else:
-                lsn[str(album_id)] = 1
+            # if str(album_id) in lsn:
+            #     lsn[str(album_id)] += 1
+            # else:
+            #     lsn[str(album_id)] = 1
 
 
         # collection.update_one({'_id': doc.get('_id')}, {'$set': data_for_insert})
 
 
-    for s in lsn:
-        if lsn[s] > 1:
-            print(lsn[s],':',s)
+    # for s in lsn:
+    #     if lsn[s] > 1:
+    #         print(lsn[s],':',s)
 
-    print(i)
+    print(is_not_album,is_album_sure,is_album_sure+is_not_album,docs_album.count())
+

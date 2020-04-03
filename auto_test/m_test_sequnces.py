@@ -23,6 +23,7 @@ if __name__ == '__main__':
     # settings.date_process = [2019, 8, 1]
     # settings.date_process = [2019, 10, 1]
     # settings.date_process = [2020, 1, 1]
+    settings.date_process = [2020, 3, 15]
     settings.dir_path_detail = settings.DIR_DETAIL_NEW_ALL_RUN
     # settings.db_name = 'fbta_20190827_1544'
     # settings.db_name = 'fbta_20190906_1220'

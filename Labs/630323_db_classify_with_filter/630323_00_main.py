@@ -31,7 +31,7 @@ def kkkkk(dbref):
     import re
     PATT = '^(.+)likes(.+)album'
     kas = re.match(PATT, hd.get('fulltext'))
-    print(hd, 'https://m.facebook.com/'+ref.get('main-link'))
+    print(hd, 'https://m.facebook.com/' + ref.get('main-link'))
     if kas:
         print([x.strip() for x in kas.groups()])
     # if header_sim_type == 'ok' and header_sim not in ab:
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     db = client.get_database(db_name)
     collection = db.get_collection('03_post_page')
 
-    docs_post = collection.find()
+    docs_post = collection.find().sort([['_id', -1]])
 
     dataft_onehot_key = ['mf_story_key', 'top_level_post_id', 'tl_objid', 'throwback_story_fbid', 'story_location',
                          'story_attachment_style', 'tn', 'content_owner_id_new', 'page_id', 'page_insights', 'photo_id',
@@ -57,62 +57,86 @@ if __name__ == '__main__':
 
     import copy
 
+    photo_i = 0
     onehot_clone = copy.deepcopy(onehot_instruct)
 
     for doc in docs_post:
-        m_source = doc.get('source')
+        m_source = doc.get('source', '')
         bs = Selector(doc.get('source', ''))
+
         dataft_list: List[Optional[Selector]] = bs.css("div[data-ft]")
+
+        is_photo_check = [0, 0]
+
+        xp = bs.css('div#m_story_permalink_view')
+        # if xp:
+        #     m_source_only_content = xp.css('div').get(0)
+        # if '/photos/' in m_source_only_content or '/photo.php?' in m_source_only_content:
+        #     is_photo_check[0] += 1
+
+        if not xp:
+            # คือสิ่งที่ไม่ใช่ story
+            print(f"{fb_url_m}/{doc.get('url')}")
+        else:
+            pass
 
         if len(dataft_list) != 0:
             dataft_str = m_style.find_max_dataft(dataft_list)
             st = m_style.dataparse(dataft_str, doc)
 
+            if st not in ['photo', 'album']:
+                if is_photo_check[0] > 0:
+                    print(f"{fb_url_m}/{doc.get('url')}")
+
             # if st == 'photo':
             #     #  กรณีที่เป็นรูปภาพ 100%  จะมีแท็ photo_id
-            #     datft_argument = ['0' for _ in range(len(dataft_onehot_key))]
-            #     js = json.loads(dataft_str, encoding='utf8')
-            #     for key in js:
-            #         if key in dataft_onehot_key:
-            #             datft_argument[dataft_onehot_key.index(key)] = '1'
             #
-            #     type_arg = ''.join(datft_argument)
-            #     if onehot_instruct[type_arg][1] != '':
-            #         if type_arg[10]=='1':
-            #             print(onehot_instruct[type_arg], js)
+            #     if is_photo_check[0] <= 0:
+            #         # print(f"{fb_url_m}/{doc.get('url')}")
+            #         datft_argument = ['0' for _ in range(len(dataft_onehot_key))]
+            #         js = json.loads(dataft_str, encoding='utf8')
+            #         for key in js:
+            #             if key in dataft_onehot_key:
+            #                 datft_argument[dataft_onehot_key.index(key)] = '1'
+            #
+            #         type_arg = ''.join(datft_argument)
+            #         if onehot_instruct[type_arg][1] != '':
+            #             if type_arg[10] == '1':
+            #                 print(onehot_instruct[type_arg], js)
             #     #     ins = input('>>')
             #     #     if ins != '':
             #     #         onehot_instruct[type_arg][1] = ins
             #     #         write_new_json(onehot_instruct)
             #     # # print(onehot_instruct[type_arg])
 
-            if st == 'album':
-                datft_argument = ['0' for _ in range(len(dataft_onehot_key))]
-                js = json.loads(dataft_str, encoding='utf8')
-                for key in js:
-                    if key in dataft_onehot_key:
-                        datft_argument[dataft_onehot_key.index(key)] = '1'
-
-                type_arg = ''.join(datft_argument)
-                if onehot_instruct[type_arg][1] == '':
-                    ผ
-
-                    ref = db.dereference(doc.get('history'))
-                    simplify = ref.get('header').get('simplify')
-
-
-                    if simplify == '':
-                        kkkkk(doc.get('history'))
-                        print('beshare')
-                        print(onehot_instruct[type_arg], js)
-                        print('-----------')
-                        # if type_arg[10] == '1':
-                        #     print(onehot_instruct[type_arg], js)
-                #     ins = input('>>')
-                #     if ins != '':
-                #         onehot_instruct[type_arg][1] = ins
-                #         write_new_json(onehot_instruct)
-                # # print(onehot_instruct[type_arg])
-
-    print(onehot_instruct)
-    write_new_json(onehot_instruct)
+    #         if st == 'album':
+    #             datft_argument = ['0' for _ in range(len(dataft_onehot_key))]
+    #             js = json.loads(dataft_str, encoding='utf8')
+    #             for key in js:
+    #                 if key in dataft_onehot_key:
+    #                     datft_argument[dataft_onehot_key.index(key)] = '1'
+    #
+    #             type_arg = ''.join(datft_argument)
+    #             if onehot_instruct[type_arg][1] == '':
+    #
+    #
+    #                 ref = db.dereference(doc.get('history'))
+    #                 simplify = ref.get('header').get('simplify')
+    #
+    #
+    #                 if simplify == '':
+    #                     kkkkk(doc.get('history'))
+    #                     print('beshare')
+    #                     print(onehot_instruct[type_arg], js)
+    #                     print('-----------')
+    #                     # if type_arg[10] == '1':
+    #                     #     print(onehot_instruct[type_arg], js)
+    #             #     ins = input('>>')
+    #             #     if ins != '':
+    #             #         onehot_instruct[type_arg][1] = ins
+    #             #         write_new_json(onehot_instruct)
+    #             # # print(onehot_instruct[type_arg])
+    #
+    # print(onehot_instruct)
+    # write_new_json(onehot_instruct)
+    print(photo_i, is_photo_check)
