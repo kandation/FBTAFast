@@ -167,9 +167,10 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
                     exit()
 
                 self.__download()
-            except:
+            except BaseException as bse:
                 log(f':mWorker: [{self.name}] Thread Error Auto Restart')
-                self.__restart_variable()
+                raise bse
+                # self.__restart_variable()
 
     def __init_browser_secure(self) -> bool:
         ret = False

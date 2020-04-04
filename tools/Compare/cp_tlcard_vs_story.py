@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from time import time
 
-db_name = 'fbta_20200202_1816'
+db_name = 'fbta_20200404_1328'
 client = MongoClient()
 db = client.get_database(db_name)
 
@@ -28,8 +28,8 @@ for doc_tl in docs_tl:
         docs_story = collection_story.count_documents({'url': doc_tl.get('main-link')})
         if docs_story <=0 :
             pass
-            print(docs_story)
-            print(doc_tl)
+            # print(docs_story)
+            # print(doc_tl)
             print(collection_story.find_one({'url': doc_tl.get('main-link')}))
             print('-' * 50)
 print()

@@ -1,15 +1,3 @@
-from datetime import datetime
-from time import time
-
-import bson
-from parsel import Selector
-
-from fbta_browser_worker import FBTADriver
-from fbta_configs import FBTAConfigs
-from fbta_node_master import FBTANodeMaster
-from fbta_settings import FBTASettings
-from pymongo import MongoClient
-
 import re as regex
 
 

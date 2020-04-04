@@ -161,3 +161,6 @@ class FBTADBManager:
 
     def next_get_name(self) -> str:
         return self.__collection_next.name
+
+    def raw_collection_next(self) -> pymongo.collection:
+        return self.__collection_next

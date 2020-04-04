@@ -1,31 +1,16 @@
-import m_630403_album_vote as vote
-import m_630403_data_scan as scan
-import m_630403_dataft as dataft
+import fbta_060_01_album_vote as vote
+import fbta_060_02_album_scan as scan
+import fbta_060_03_dataft as dataft
+import fbta_log
 from parsel import Selector
 from pymongo import MongoClient
 from urllib.parse import unquote
 import bson
 
-"""
-โปรแกรมคำนวนว่าหน้า story บอกว่าเป็นภาพ หรืออะไร (    สมบูรณ์)
-แต่ว่าเพื่อความชัวร์ ใช้ data-ft  มาช่วยด้วยก็ดี เผื่อบางที่ไม่มีภาพแสดงตัวอย่าง
-@return data_pp
-"""
-
 fb_url_m = 'https://m.facebook.com/'
-fb_url_w = 'https://www.facebook.com/'
-
-db_name = 'fbta_20200331_0107'
 
 
-def show_counter(c, split):
-    if c % split == 0:
-        print(c, end='.')
-        if c % (split*20) == 0:
-            print()
-
-
-if __name__ == '__main__':
+def main(db_name):
     client = MongoClient()
     db = client.get_database(db_name)
     collection = db.get_collection('03_post_page')
@@ -52,5 +37,5 @@ if __name__ == '__main__':
         }
 
         collection.update_one({'_id': doc.get('_id')}, {'$set': data_insert})
-        show_counter(counter, 1000)
+        fbta_log.show_counter(counter, 1000)
         counter += 1
