@@ -15,7 +15,7 @@ class FBTADBManager:
     """
 
     def __init__(self, dbname: str, collection_list: list = None, stat_coll=None):
-        self.current_num = 0
+        self.collect_current_total_docs_find = 0
         self.db_skipter = 0
         self.clusters_num = 0
         self.__collection_list = collection_list
@@ -30,6 +30,8 @@ class FBTADBManager:
         self.__db_cards_temp = List[Optional[pymongo.cursor.Cursor]]
 
         self.__find_condition = {}
+
+        self.total_docs_first_find = 0
 
         if self.__collection_list:
             current_coll = collection_list[0] if collection_list[0] else 'error_collection'
@@ -48,12 +50,13 @@ class FBTADBManager:
 
             self.__data_list: List[Optional[pymongo.cursor.Cursor]] = []
 
-            self.__cuurent_cursor_new = None
+            self.__current_cursor_new = None
 
-            self.current_num = self.getCurrentCollection_num()
+            self.collect_current_total_docs_find = -1
 
     def get_loop_time(self):
-        return 2 if int(0.05 * self.current_num) <= 0 else int(0.05 * self.current_num) + 1
+        return 2 if int(0.05 * self.collect_current_total_docs_find) <= 0 else int(
+            0.05 * self.collect_current_total_docs_find) + 1
 
     def get_db_name(self) -> str:
         return self.__db.name
@@ -67,23 +70,27 @@ class FBTADBManager:
         self.__db_cardnum = val
 
     def getCurrentCollection_num(self):
-        return self.__current_collection.count()
+        return self.__current_collection.count_documents(self.get_find_condition())
 
     def checkCurrentIsNotEmpty(self):
         if self.getCurrentCollection_num() < 0:
             raise Exception(self.__prop_current_collection_name, 'Database is Empty')
 
     def get_find_docs_count(self) -> int:
-        self.current_num = self.__current_collection.count_documents(self.__find_condition)
-        return self.current_num
+        self.collect_current_total_docs_find = self.__current_collection.count_documents(self.__find_condition)
+        return self.collect_current_total_docs_find
 
     def get_current_docs_by_limit(self, start, length) -> pymongo.cursor.Cursor:
         log(f':DBMange: \t■■■■■■■ DB Load with startPage=[{start}] to [{start + length - 1}] with[{length}]')
-        return self.__current_collection.find(no_cursor_timeout=True).skip(start).limit(length)
+        return self.__current_collection.find(self.__find_condition, no_cursor_timeout=True).skip(start).limit(length)
 
-    def set_custom_find(self, cond: dict):
+    def set_custom_find(self, cond: dict, recheck_key=True):
         self.__is_use_custom_find = True
-        self.__find_condition = cond
+        if recheck_key:
+            cond['downloaded-recheck'] = {'$exists': False}
+            self.__find_condition = cond
+        else:
+            self.__find_condition = cond
 
     def get_current_docs(self) -> pymongo.cursor.Cursor:
         log(f':DBMange: \t■■■■■■■ DB Load Full')
@@ -131,33 +138,46 @@ class FBTADBManager:
     def cal_start_index(self):
         return self.db_index * self.db_skipter
 
-    def add_stat_to_db(self, name, method, start_time, end_time, stat):
+    def __add_stat_to_db(self, name, method, start_time, end_time, stat, log_type):
         data = {
             'process-name': name,
             'process-method': method,
             'process-time-start': start_time,
             'process-time-end': end_time,
             'process-time-total-text': FBTADifftime.printTimeDiff(start_time),
-            'log-type': 'summery',
+            'log-type': log_type,
             'stat-data': stat,
         }
 
         self.stat_collectioin_add_one(data)
+
+    def add_stat_to_db(self, name, method, start_time, end_time, stat):
+        self.__add_stat_to_db(name, method, start_time, end_time, stat, 'Summery')
 
     def add_stat_to_db_auto(self, name, method, start_time, end_time, stat):
-        data = {
-            'process-name': name,
-            'process-method': method,
-            'process-time-start': start_time,
-            'process-time-end': end_time,
-            'process-time-total-text': FBTADifftime.printTimeDiff(start_time),
-            'log-type': 'autosave',
-            'stat-data': stat,
-        }
-        self.stat_collectioin_add_one(data)
+        self.__add_stat_to_db(name, method, start_time, end_time, stat, 'Auto-save')
 
     def current_get_name(self) -> str:
         return self.__current_collection.name
 
     def next_get_name(self) -> str:
         return self.__collection_next.name
+
+    def raw_collection_next(self) -> pymongo.collection:
+        return self.__collection_next
+
+    def raw_collection_current(self) -> pymongo.collection:
+        return self.__current_collection
+
+    def get_find_condition(self) -> dict:
+        return self.__find_condition
+
+    @staticmethod
+    def get_resume_key() -> dict:
+        return {'downloaded-recheck': True}
+
+    def update_first_find_total(self):
+        self.total_docs_first_find = self.getCurrentCollection_num()
+
+    def update_coll_current_index(self):
+        self.collect_current_total_docs_find = self.getCurrentCollection_num()

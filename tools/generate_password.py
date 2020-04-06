@@ -18,6 +18,6 @@ def generatePasswordFile(password: str):
 
 
 if __name__ == '__main__':
-    generatePasswordFile('YOUR-PASSWORD')
+    # generatePasswordFile('YOUR-PASSWORD')
     print(printPassword())
 

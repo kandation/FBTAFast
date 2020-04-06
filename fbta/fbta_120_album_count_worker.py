@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from typing import List, Optional
 
-from fbta_08_album_count_method import FBTAAlbumCountMethod
+from fbta_120_album_count_method import FBTAAlbumCountMethod
 from fbta_global_database_manager import FBTADBManager
 from fbta_03_history_download_method import FBTAHistoryDownloaderMethod
 from fbta_main_worker import FBTAMainWorker
@@ -21,7 +21,7 @@ class FBTAAlbumCountWorker(FBTAMainWorker):
         # self.__activity: FBTAHistoryDownloaderMethod = FBTAHistoryDownloaderMethod.NONE
         self.__photos_method: FBTAAlbumCountMethod = FBTAAlbumCountMethod.NONE
 
-        self.REGX_PATTERN = '(?<=[\>])(\+[0-9]+)(?=[\<])'
+        self.REGX_PATTERN = '(?<=[\>])(\+[0-9,]+)(?=[\<])'
 
     def after_init(self):
         """Read instruction in Lab expr"""

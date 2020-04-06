@@ -28,6 +28,7 @@ class FBTADriver:
 
     def start_session(self):
         self.add_cookie_from_node_master()
+        self.set_header_firefox()
 
     @property
     def session(self) -> requests.Session():

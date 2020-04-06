@@ -6,7 +6,7 @@ from fbta_05_cards_download_manager import FBTACardsDownloadManager
 from fbta_02_clusters import FBTAClusterInfo
 from fbta_06_photos_download_manager import FBTAPhotosDownloadManager
 from fbta_07_dataft import FBTADataft
-from fbta_08_album_count_manager import FBTAAlbumCountManager
+from fbta_120_album_count_manager import FBTAAlbumCountManager
 from fbta_configs import FBTAConfigs
 from fbta_03_history_download_manager import FBTAHistoryDownloadManager
 from fbta_mkdir import FBTAMkdir

@@ -168,12 +168,12 @@ class FBTAMainManager(metaclass=ABCMeta):
         estimate = 'n/a'
         time_diff = time.time() - self.__stat.history_time_global_start
         if time_diff > 60 and self.db.db_index > 0:
-            estimate = (time_diff * self.db.current_num) / self.db.db_index
+            estimate = (time_diff * self.db.collect_current_total_docs_find) / self.db.db_index
             estimate = FBTADifftime.time2string(estimate)
 
         str = (f"\n---------------------\n"
                f"\t>> DocsLen  : {num_docs_now}\n"
-               f"\t>> Index    : {self.db.db_index} / {self.db.current_num}\n"
+               f"\t>> Index    : {self.db.db_index} / {self.db.collect_current_total_docs_find}\n"
                f"\t>> TimeNow  : {time.time()} ({datetime.datetime.now()})\n"
                f"\t>> Loopshow : {loop_time}   \n"
                f"\t>> Clusters : {self.db.clusters_num}\n"
@@ -361,7 +361,7 @@ class FBTAMainManager(metaclass=ABCMeta):
     def __statistic_autosave(self):
         worker_stat = []
         for slave in self.workers:
-            worker_stat.append(slave.stat_autosave_value())
+            worker_stat.append(slave.stat_auto_save_value())
 
         self.db.add_stat_to_db_auto(
             str(self.__slave_class_name.__name__),

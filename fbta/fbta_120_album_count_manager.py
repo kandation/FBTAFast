@@ -1,5 +1,5 @@
 from fbta_02_clusters import FBTAClusterInfo
-from fbta_08_album_count_worker import FBTAAlbumCountWorker
+from fbta_120_album_count_worker import FBTAAlbumCountWorker
 from fbta_global_database_manager import FBTADBManager
 from fbta_03_history_download_method import FBTAHistoryDownloaderMethod
 from fbta_03_history_download_worker import FBTAHistoryDownloadWorker

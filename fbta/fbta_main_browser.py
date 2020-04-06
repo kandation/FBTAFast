@@ -140,6 +140,9 @@ class FBTAMainBrowser(FBTABrowserTitle, metaclass=ABCMeta):
     def __update_signal_once(self, content_once=False):
         self.__signal_reload_content_once = content_once
 
+    def get_browser_status(self):
+        return self.__title_status
+
     def goto(self, url, stream=False):
         self._check_internet_connect()
         self.__get_secure(url, stream)

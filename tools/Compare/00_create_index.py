@@ -2,7 +2,7 @@ import pymongo
 from pymongo import MongoClient
 from time import time
 
-db_name = 'fbta_20200202_1816'
+db_name = 'fbta_20200404_1328'
 client = MongoClient()
 db = client.get_database(db_name)
 

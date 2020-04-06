@@ -1,7 +1,7 @@
 import copy
 import time, datetime, os
 from random import random
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 
 import pymongo
 
@@ -31,6 +31,12 @@ class FBTAMainManager(metaclass=ABCMeta):
                  db_collection_name,
                  slave_class_name: classmethod):
 
+        self.__add_job_stat_no_job = 0
+        self.__add_job_stat = 0
+        self.__add_job_fail_stat = 0
+        self.__worker_stop_signal = False
+        self.__job_status_complete = None
+        self.__db_batch_length = 2000
         self.__db_currsor_is_finiseh = True
         self.say_hello_time = time.time()
         self.__slave_class_name = slave_class_name
@@ -53,7 +59,7 @@ class FBTAMainManager(metaclass=ABCMeta):
 
         self.__constant_list = 2
 
-        self.__is_show_all_wiating_jobs = False
+        self.__is_show_all_waiting_jobs = False
 
         self.__big_loop_time = None
         self.__time_big_loop_report_time = 10
@@ -143,8 +149,11 @@ class FBTAMainManager(metaclass=ABCMeta):
         self.__method_wait_worker_until_ready()
         log(':mManage: ( _)0*´¯`·.¸.·´¯`°Q(_ )  Start Main Manager')
 
-        self.__init_time_event()
         self._set_db_custom_find()
+        self.__init_time_event()
+        self.db.update_first_find_total()
+        self.__printSettings()
+        self.__update_current_index()
         self.__set_docs_cursor()
 
         while self.__is_manager_running:
@@ -162,7 +171,6 @@ class FBTAMainManager(metaclass=ABCMeta):
         self.__method_loop_big_report_show(0)
 
         self.__endThread()
-
 
     def __method_loop_big_reporter_time_switching(self):
         c = (self.db.db_index - self.db.clusters_num)
@@ -192,8 +200,8 @@ class FBTAMainManager(metaclass=ABCMeta):
 
         time_diff = time.time() - self.__stat.history_time_global_start
         if time_diff > 60 and self.db.db_index > 0:
-            if self.db.db_index < self.db.current_num:
-                self.__time_estimate = (time_diff * self.db.current_num) / self.db.db_index
+            if self.db.db_index < self.db.collect_current_total_docs_find:
+                self.__time_estimate = (time_diff * self.db.collect_current_total_docs_find) / self.db.db_index
                 self.__time_estimate = FBTADifftime.time2string(self.__time_estimate)
             else:
                 if not self.__time_estimate_is_end:
@@ -202,16 +210,16 @@ class FBTAMainManager(metaclass=ABCMeta):
 
         kinf = self.__time_estimate if not self.__time_estimate_is_end else str(self.__time_estimate) + ' (Freeze)'
         stras = (f"\n---------------------\n"
-               f"\t>> DocsLen  : {num_docs_now}\n"
-               f"\t>> Index    : {self.db.db_index} / {self.db.current_num}\n"
-               f"\t>> TimeNow  : {time.time()} ({datetime.datetime.now()})\n"
-               f"\t>> Loopshow : {loop_time}   \n"
-               f"\t>> Clusters : {self.db.clusters_num}\n"
-               f"\t>> FromStart: {FBTADifftime.printTimeDiff(self.__stat.history_time_global_start)}   \n"
-               f"\t>> waiting  : {len(self.db.docs_list_waiting)}\n"
-               f"\t>> Estimate : {kinf}\n"
-               f"-----------------------\n"
-               )
+                 f"\t>> DocsLen  : {self.__add_job_fail_stat} +{self.__add_job_stat} +{self.__add_job_stat_no_job}\n"
+                 f"\t>> Index    : {self.db.db_index} / {self.db.total_docs_first_find}\n"
+                 f"\t>> TimeNow  : {time.time()} ({datetime.datetime.now()})\n"
+                 f"\t>> Loopshow : {loop_time}   \n"
+                 f"\t>> Clusters : {self.db.clusters_num}\n"
+                 f"\t>> FromStart: {FBTADifftime.printTimeDiff(self.__stat.history_time_global_start)}   \n"
+                 f"\t>> waiting  : {len(self.db.docs_list_waiting)}\n"
+                 f"\t>> Estimate : {kinf}\n"
+                 f"-----------------------\n"
+                 )
 
         log(stras)
 
@@ -230,12 +238,11 @@ class FBTAMainManager(metaclass=ABCMeta):
         self.db.docs_num = self.__db.getCurrentCollection_num()
 
         self.__clusters_cal_all()
-        self.__printSettings()
 
     def __printSettings(self):
         settings = {
             'Cluster Num': self.db.clusters_num,
-            'DB Index': self.db.docs_num
+            'DB Index': self.db.total_docs_first_find
         }
 
         log('----- Settings ------')
@@ -265,19 +272,11 @@ class FBTAMainManager(metaclass=ABCMeta):
 
     def __show_all_waiting_job(self):
         if all([w.is_waiting_job() for w in self.workers]):
-            if not self.__is_show_all_wiating_jobs:
-                self.__is_show_all_wiating_jobs = True
+            if not self.__is_show_all_waiting_jobs:
+                self.__is_show_all_waiting_jobs = True
                 log(
                     f':mMange: ■■■■■■■ all waiting job index[{self.db.db_index}]  stopCouter[{self.__stop_counter}] '
                     f'lenDocs[{len(self.db.docs_list)}]')
-
-    def __method_remove_old_waiting_list(self, id):
-        search_index = self.__find_time(self.db.docs_list_waiting, 'jid', str(id))
-        if search_index >= 0:
-            remove = self.db.docs_list_waiting.pop(search_index)
-            log(f':mMange: Remove from WAITING_LIST [{id}] index [{search_index}] '
-                f'from {remove.get("worker", "NAN_WORKER")} in wList=[ '
-                f'{len(self.db.docs_list_waiting)} ]@ {remove.get("time", "non_naja")}')
 
     def __method_say_hello(self):
         if time.time() - self.say_hello_time > 5:
@@ -293,7 +292,7 @@ class FBTAMainManager(metaclass=ABCMeta):
             print(f'{self.__watch_all_worker()} ')
             # self.__method_check_waiting_list()
             self.say_hello_time = time.time()
-            self.__statistic_autosave()
+            self.__statistic_auto_save()
 
     def __watch_all_worker(self) -> str:
         all_alive_bool = [w.is_alive() for w in self.workers]
@@ -302,28 +301,18 @@ class FBTAMainManager(metaclass=ABCMeta):
         self.__worker_all_is_down = not any(all_alive_bool)
         return f'{all_alive_bool} {all_alive_name}'
 
-    def __method_check_waiting_list(self):
-        for dw in self.db.docs_list_waiting:
-            # ควรเป็น Adaptive time มากกว่า เพราะเมื่อ Node เยอะ บางที่การ restart อาจใช้เวลานานขึ้น
-            timeout_normal = time.time() - dw.get('time') > self.configs.timeout_waiting_list
-            if timeout_normal:
-                timeout_is_real = False
-                try:
-                    timeout_is_real = self.workers[dw.get('worker-id')].is_end()
-                except:
-                    pass
-                if timeout_is_real:
-                    print(f':mManage: Detect Worker [{dw.get("worker")}] spend more time (TIMEOUT) '
-                          f'since [{time.time() - dw.get("time", 0)}] ago')
-                    self.workers[dw.get('worker-id')].restart_browser()
-
-    def __method_check_worker_stop_currsor(self):
+    def __method_check_worker_stop_cursor(self):
         pass
 
     def __method_check_worker_stop(self, worker):
-        # Check IS STOP cluster REALLY
+        """
+        ไม่มีงานมาให้จริงทำการตรวจว่า Worker โหลดเสร็จยัง พร้อมทั้งสั่งไว้ล่วงหน้าว่าให้หยุด
+        พอรู้ว่าหยุดก็นับไปเรื่อยๆ
+        :param worker:
+        :return:
+        """
         self.__stop_counter = 0
-        if self.db.db_index >= self.db.get_find_docs_count():
+        if self.__worker_stop_signal:
             if not worker.is_end():
                 log(f':mManage: manager send end job to {worker.name}')
             worker.end_job()
@@ -332,17 +321,6 @@ class FBTAMainManager(metaclass=ABCMeta):
 
     def __method_check_worker_is_respond(self):
         return self.db.docs_list_waiting
-
-    def __method_addDataToList(self):
-        num_fill_list = self.__add_docs_cursor_to_list()
-        if num_fill_list > 0:
-            log(f':mManger:\t >> Add Docs to list = {num_fill_list}')
-            isShouldGetDocsInDBReturn = False
-            return isShouldGetDocsInDBReturn
-        return False
-
-    def __method_stop_add_docs_to_list_condition(self):
-        return self.db.db_index >= self.db.getCurrentCollection_num()
 
     def __method_all_alive(self):
         p = [w.is_end() for w in self.workers]
@@ -358,13 +336,16 @@ class FBTAMainManager(metaclass=ABCMeta):
         pass
 
     def __set_docs_cursor(self):
-        self.__db_current_coll_cursor = self.__db.get_current_docs()
+        """
+        Set First Cursor point to first row
+        """
+        self.__db_current_coll_cursor = self.__db.get_current_docs_by_limit(0, self.__db_batch_length)
+        # self.__add_job_stat += self.__db_current_coll_cursor.count()
 
-
-    def __statistic_autosave(self):
+    def __statistic_auto_save(self):
         worker_stat = []
         for slave in self.workers:
-            worker_stat.append(slave.stat_autosave_value())
+            worker_stat.append(slave.stat_auto_save_value())
 
         self.db.add_stat_to_db_auto(
             str(self.__slave_class_name.__name__),
@@ -381,6 +362,8 @@ class FBTAMainManager(metaclass=ABCMeta):
             worker_stat.append(self.__stat.json_to_stat(slave.join()))
             log(f':mManage:\t\t - Cluster {slave.name} JOINED')
 
+        worker_stat.append(self.stat.get_worker_stat_dict('Manager'))
+
         self.db.add_stat_to_db(
             str(self.__slave_class_name.__name__),
             'cluster',
@@ -389,63 +372,77 @@ class FBTAMainManager(metaclass=ABCMeta):
             worker_stat
         )
 
-        # for worker in self.workers:
-        #     del worker
-
-        # del self.workers
+        print('STTTTT', self.__add_job_stat)
 
     def __init_time_event(self):
         self.__timer.add('big_loop_report')
 
-    def __find_time(self, lst, key, value):
-        for i, dic in enumerate(lst):
-            if dic[key] == value:
-                return i
-        return -1
-
-    def get_docs_in_cursor(self) -> dict:
-        try:
-            skip_stack = 0
-            while True:
+    def get_docs_in_cursor_with_limit(self) -> Union[Dict, pymongo.cursor.Cursor]:
+        """
+        ฟังก์ชั่นสำคัญแต่ไม่เขียนอะ หยิ่ง
+        :return: doc {dict}
+        """
+        while True:
+            try:
                 cr_doc = self.__db_current_coll_cursor.next()
-                self.db.db_index += 1
+                # ใช้สำหรับการ skip กรณีโหลดซ้ำ DB เดิม
+                return cr_doc
 
-                if cr_doc.get('next-downloaded') is not None or cr_doc.get('skip-donotcare') is not None:
-                    pass
+            except StopIteration:
+                # TODO: 630406 คิดว่าบรรทัดนี้อาจจะทำงานมากเกินความจำเป็น ลองตรวจสอบดูด้วย
+                estimate_doc = self.__db.raw_collection_current().count_documents(self.db.get_find_condition(), limit=1)
+
+                if estimate_doc > 0:
+                    self.__db_current_coll_cursor = self.__db.get_current_docs_by_limit(0, self.__db_batch_length)
+                    # self.__add_job_stat += self.__db_current_coll_cursor.count()
                 else:
-                    if skip_stack > 0:
-                        self.__stat_skip_download += skip_stack
-                        log(f':mManager: Skip Stack {skip_stack}')
+                    exit_db = True
                     break
-                skip_stack += 1
-            return cr_doc
-        except StopIteration:
-            self.__db_currsor_is_finiseh = True
-            return False
+        if exit_db:
+            self.__worker_stop_signal = True
+            return {}
 
     def __method_add_jobs(self):
-        # time.sleep(0.4+random()/10)
+        # time.sleep(0.01+random()/100)
         self.__stop_counter = 0
+        jobs: pymongo.cursor.Cursor
+        jobs: Optional[str]
+
         for worker_id, worker in enumerate(self.workers):
+            time.sleep(0.1 + random() / 10)
             if worker:
                 if worker.isErrorFatal:
-                    log(':mMange: ■■■■■■■ ERROR EXIT ■■■■■■■', worker)
+                    log(':mMange: ■■■■■■■ ERROR FATAL EXIT ■■■■■■■', worker)
                     exit()
 
                 if worker.is_waiting_job():
-                    jobs = self.get_docs_in_cursor()
+                    jobs = self.__job_status_complete
+                    if self.__job_status_complete is None:
+                        # จะของงานต่อไปเมื่อไม่มีงานค้างที่ผิดพลาดในระบบ
+                        jobs = self.get_docs_in_cursor_with_limit()
+                        self.db.db_index += 1
+
                     if jobs:
-                        # self.db.docs_list_waiting.append(
-                        #     {'jid': str(jobs.get('_id')), 'time': time.time(), 'worker': worker.name,
-                        #      'worker-id': worker_id})
 
-                        worker.add_job(jobs)
+                        # ถ้ามีงานลองใส่ลงใน cluster ก่อนถ้าใส่ได้มันก็จะทำงาน ถ้าไม่ก็ส่งให้คนอื่น
+                        add_job_status = worker.add_job(jobs)
 
+                        # ถ้างานส่งให้โอเค ครั้งต่อไปก็แจกงานใหม่ ถ้าไม่ ก็เอางานเดิมเนี่ยแหละให้คนอื่นทำ
+                        if not add_job_status:
+                            self.__job_status_complete = jobs
+                            self.__add_job_fail_stat += 1
+                            continue
+
+                        self.__add_job_stat_no_job += 1
+                        self.__job_status_complete = None
                         self.__stat.worker_couter_docs += 1
+
                     else:
                         self.__method_check_worker_stop(worker)
-                # self.__method_remove_old_waiting_list(worker.get_last_job_finshed())
             else:
                 print(f'mMange:{datetime.datetime.now()} Some Worker will be INIT please wait')
                 self.__method_wait_worker_until_ready()
                 print('mManage: OK Worker all run let\'s go')
+
+    def __update_current_index(self):
+        self.db.update_coll_current_index()

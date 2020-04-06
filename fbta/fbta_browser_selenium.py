@@ -33,6 +33,9 @@ class FBTABrowserSelenium(FBTAMainBrowser):
             '--window-size={w},{h}'.format(w=self._configs.window_size_width,
                                            h=self._configs.window_size_height))
 
+        if settings.headerless:
+            self.__chrome_options.add_argument("--headless")
+
         self.__driver = None
 
     def _check_internet_connect(self):
@@ -103,5 +106,5 @@ class FBTABrowserSelenium(FBTAMainBrowser):
     def _driver_get(self, url, stream=False):
         self.driver.get(url)
 
-    # def __del__(self):
-    #     self.driver.close()
+    def __del__(self):
+        self.driver.close()

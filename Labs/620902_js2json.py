@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-with open('labs/620902_albumdl/test_case/6209021742_timeline.js', mode='r') as fo:
+with open('Labs/620902_albumdl/test_case/6209021742_timeline.js', mode='r') as fo:
     data = fo.read()
 
 js_obj =data

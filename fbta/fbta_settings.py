@@ -2,6 +2,7 @@ import datetime
 import os
 from typing import Any
 
+
 # from fbta_keyinterupt import FBTAKeyInterupt
 
 
@@ -10,6 +11,12 @@ class FBTASettings:
     _DIR_DETAIL_NEW_ON_DAY = 'dir_detail_new_on_day'
 
     def __init__(self, username):
+        self.headerless = False
+        self.__dir_save_prefix = 'save_'
+        self.__is_user_init_db = False
+        self.__dir_path = r'./'
+        self.dir_save_path = r'./save/'
+
         self.init_node_master_browser = True
         self.dir_data_path = './'
         self.username = username
@@ -23,8 +30,6 @@ class FBTASettings:
 
         self.date_process = None
         self.driver_path = r'.'
-        self.__dir_path = r'./'
-        self.dir_save_path = r'./save/'
         self.password_key = r'./key.key'
         self.password_enc = r'./password.enc'
         self.use_nodeMaster = True
@@ -112,13 +117,17 @@ class FBTASettings:
         return self.__getDBName()
 
     @db_name.setter
-    def db_name(self, name):
+    def db_name(self, name: str):
         if name == '':
             raise ValueError(':Settings: Database name MUST not empty')
-        elif name == None:
-            self.__Init_DBName()
+        elif name is None:
+            self.__init_db_name()
         else:
             self.__db_name = name
+            if 'fbta_' in name:
+                # TODO: เนื่องจาก ขก ค่อยมาทำการแบ่ง
+                self.__is_user_init_db = True
+                self.__dir_path = self.__dir_save_path + self.__dir_save_prefix + name.replace('fbta_', '')
 
     @property
     def DIR_DETAIL_NEW_ON_DAY(self):
@@ -135,13 +144,14 @@ class FBTASettings:
         return self.__db_name
 
     def __autoInit(self):
-        self.__Init_DBName()
-        self.__Init_DirPathName()
+        self.__init_db_name()
+        self.__init_dir_path_name()
 
-    def __Init_DBName(self):
-        _dir_db_str = '%Y%m%d_%H%M'
-        nowDB = datetime.datetime.now().strftime(_dir_db_str)
-        self.db_name = self.__db_prefix + '_' + str(nowDB)
+    def __init_db_name(self):
+        if not self.__is_user_init_db:
+            _dir_db_str = '%Y%m%d_%H%M'
+            nowDB = datetime.datetime.now().strftime(_dir_db_str)
+            self.db_name = self.__db_prefix + '_' + str(nowDB)
 
     @property
     def renew_index(self):
@@ -160,21 +170,25 @@ class FBTASettings:
             s += pp.format(str(i).replace('_' + _name, ''), self.__dict__.get(i))
         return s
 
-    def __Init_DirPathName(self):
-        _dir_dir_str = '%Y%m%d'
+    def __init_dir_path_name(self):
 
-        if self.__dir_path_detail == self.DIR_DETAIL_NEW_ALL_RUN:
-            _dir_dir_str = '%Y%m%d_%H%M'
+        if not self.__is_user_init_db:
+            _dir_dir_str = '%Y%m%d'
 
-        nowDir = datetime.datetime.now().strftime(_dir_dir_str)
-        nowDir = self.dir_save_path + 'save_' + nowDir
+            if self.__dir_path_detail == self.DIR_DETAIL_NEW_ALL_RUN:
+                _dir_dir_str = '%Y%m%d_%H%M'
 
-        self.__dir_path = nowDir
+            nowDir = datetime.datetime.now().strftime(_dir_dir_str)
+            nowDir = self.dir_save_path + self.__dir_save_prefix + nowDir
+
+            self.__dir_path = nowDir
+        else:
+            self.__dir_path = self.dir_save_path + self.__dir_save_prefix + self.db_name.replace('fbta_', '')
 
     @property
     def dir_path(self):
         if not self.__dir_path:
-            self.__Init_DirPathName()
+            self.__init_dir_path_name()
         return self.__dir_path
 
     @property
@@ -186,7 +200,7 @@ class FBTASettings:
         if not dir:
             self.__dir_save_path = './'
         else:
-            self.__dir_save_path = dir[:-1]+'/' if dir[-1] != '/' else dir
+            self.__dir_save_path = dir[:-1] + '/' if dir[-1] != '/' else dir
 
     @property
     def dir_path_detail(self):
@@ -198,7 +212,7 @@ class FBTASettings:
         if level not in cond:
             raise ValueError(':Settings: Directory Level Not Correct')
         self.__dir_path_detail = level
-        self.__Init_DirPathName()
+        self.__init_dir_path_name()
 
     @property
     def driver_path(self):

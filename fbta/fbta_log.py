@@ -25,7 +25,6 @@ def log(*args):
         logger.log(level=99, msg=text.encode('utf8'))
 
 
-
 def log_header(*args):
     print('■' * 30)
     log(*args)
@@ -36,3 +35,10 @@ def log_summery(*args):
     print('-' * 100)
     log(*args)
     print('-' * 100, '\n\n')
+
+
+def show_counter(c, split):
+    if c % split == 0:
+        print(c, end='.')
+        if c % (split * 20) == 0:
+            print()

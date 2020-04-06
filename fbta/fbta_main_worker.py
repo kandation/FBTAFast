@@ -20,7 +20,6 @@ class FBTAVariableDownload:
         self.doc = None
         self.__prev_doc = None
 
-
     def new_download(self, doc: pymongo.cursor.Cursor):
         log('add new dowload', doc['_id'])
         if self.doc is not None:
@@ -167,9 +166,10 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
                     exit()
 
                 self.__download()
-            except:
+            except BaseException as bse:
                 log(f':mWorker: [{self.name}] Thread Error Auto Restart')
-                self.__restart_variable()
+                raise bse
+                # self.__restart_variable()
 
     def __init_browser_secure(self) -> bool:
         ret = False
@@ -205,7 +205,6 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
         if is_emergency_stop:
             self.__is_manager_running = False
 
-
     def __restart_variable(self):
         self.__slave_is_waiting_job = True
         self.is_ready = False
@@ -231,15 +230,20 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
     def is_waiting_job(self):
         return self.__slave_is_waiting_job
 
-    def add_job(self, card: pymongo.cursor.Cursor):
+    def add_job(self, card: pymongo.cursor.Cursor) -> bool:
+        # แสดงคำเตือนเฉยๆ แต่ไม่จัดการอะไร
+        self.__slave_is_waiting_job = False
         if card:
             log(f':mWorker:\t\t>> {self.__slave_class_name} : '
                 f'Add Jobs To [{self.name}]'
                 f' [{card["_id"]}]')
         else:
             log(f':mWorker: \t\t !!! [{self.name}] Add jobs get None type ')
-        self.__slave_is_waiting_job = False
-        self.download_current.new_download(card)
+
+        # จัดการการส่งงาน
+        status = self.download_current.new_download(card)
+        self.__slave_is_waiting_job = not status
+        return status
 
     def end_job(self):
         self.__slave_is_end = True
@@ -295,7 +299,7 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
         self.killBrowser()
         self.__stop_thread = True
 
-    def stat_autosave_value(self):
+    def stat_auto_save_value(self):
         return self.__stat.get_worker_stat_dict(self.name)
 
     def __is_must_running(self):
@@ -305,11 +309,9 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
         if self.download_current.has_download_url():
             self.__slave_is_waiting_job = False
             self.process_timer_start = time.time()
-            log(':mWorker: Add to slave method', self.download_current.doc['_id'])
+            log(f":mWorker: Add to slave method {self.download_current.doc.get('_id', 'NO _id key')}")
 
             self.slave_method(self.download_current.get())
-
-            self.download_current.end_download()
 
             self.__stat.history_couter_success += 1
             finish_time = time.time()
@@ -323,7 +325,10 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
                 f'{FBTADifftime.time2string(dift_process_time)} '
                 f'({dift_process_time}) AVR={average_process_time}')
 
+            self.download_current.end_download()
+
         else:
+            self.download_current.end_download()
             self.__slave_is_waiting_job = True
 
     @abstractmethod
