@@ -1,4 +1,5 @@
 class FBTABrowserConstant:
+    STATUS_SAVE_AND_IGNORE = 'STATUS_SAVE_AND_IGNORE'
     DEBUG = 'debug'
     DEBUG_SHOW_SOURCE = 'debug_show_source'
     SIGNAL_NORMAL_START = -2

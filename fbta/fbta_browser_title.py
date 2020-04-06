@@ -74,7 +74,7 @@ class FBTABrowserTitle(metaclass=ABCMeta):
                 ]
             },
             'Content Not Found': {
-                'do': FBTABrowserConstant.STATUS_CONTENT_RELOAD_ONCE,
+                'do': FBTABrowserConstant.STATUS_SAVE_AND_IGNORE,
                 'step': [
                     FBTABrowserConstant.DEBUG_SHOW_SOURCE,
                     FBTABrowserConstant.DOING_TITLE_CHECK_ONLY

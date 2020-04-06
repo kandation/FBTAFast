@@ -32,6 +32,9 @@ def main(db_name):
         for pl in photo_db_list:
             str_lnk = ''.join(pl)
             fbid_result = regex.findall(PHOTO_PATTERN, str_lnk)
+            if 'video' in pl:
+                print('999999999999999999999999999')
+                exit()
             print(fbid_result, pl)
             photo_fbid = ''.join(fbid_result[0])
 
@@ -42,9 +45,12 @@ def main(db_name):
             data_insert['url'] = str_lnk
             data_insert['ref'] = src
 
-            coll_photo.insert_one(data_insert)
+            # coll_photo.insert_one(data_insert)
 
         fbta_log.show_counter(counter, 1000)
         counter += 1
 
     print('@', counter)
+
+if __name__ == '__main__':
+    main('fbta_20200404_1650')

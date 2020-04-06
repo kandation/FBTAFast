@@ -1,10 +1,11 @@
-import os, random
+import os, random, os.path
 import datetime
 
 path = './Logs/'
 ori_file = 'log_temp.log'
 c = ''
 if os.path.isfile(ori_file):
+
     try:
         with open(ori_file, mode='r') as fo:
             c = fo.read(1024)
@@ -22,7 +23,9 @@ if os.path.isfile(ori_file):
                 print(f'Renamed {logfile}')
 
     if logfile:
-        os.rename(ori_file, f'{path}save_log_{logfile}_w_{random.randint(1, 10)}.txt')
+        same_file = len([name for name in os.listdir(path) if logfile in name])
+        n = f'{path}save_log_{logfile}_w_{str(same_file).zfill(4)}.txt'
+        os.rename(ori_file, n + f'')
     else:
         dae = datetime.datetime.now().strftime('%Y_%m_%d_%H-%M-%S')
         os.rename(ori_file, f'{path}log_{dae}.txt')

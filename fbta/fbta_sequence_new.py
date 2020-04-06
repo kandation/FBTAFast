@@ -6,7 +6,7 @@ from fbta_05_cards_download_manager import FBTACardsDownloadManager
 from fbta_02_clusters import FBTAClusterInfo
 from fbta_06_photos_download_manager import FBTAPhotosDownloadManager
 from fbta_07_dataft import FBTADataft
-from fbta_08_album_count_manager import FBTAAlbumCountManager
+from fbta_120_album_count_manager import FBTAAlbumCountManager
 from fbta_configs import FBTAConfigs
 from fbta_03_history_download_manager import FBTAHistoryDownloadManager
 from fbta_mkdir import FBTAMkdir
@@ -14,11 +14,14 @@ from fbta_node_master import FBTANodeMaster
 from fbta_sequence_func import FBTASequenceFunction
 from fbta_settings import FBTASettings
 from fbta_01_yearbox import FBTAYearBox
+from fbta_log import log
 
 
 class FBTASequenceNew(FBTASequenceFunction):
     def __init__(self, setting: FBTASettings, configs: FBTAConfigs):
         FBTASequenceFunction.__init__(self, setting, configs)
+
+        self.__dir_path = setting.dir_path
 
         self.__node_master: FBTANodeMaster = FBTANodeMaster.NONE
 
@@ -26,6 +29,7 @@ class FBTASequenceNew(FBTASequenceFunction):
         self.__node_cluster_info: FBTAClusterInfo = None
 
     def start(self):
+        log(f'$START_FBTA_TEST$_&/{self.__dir_path}')
         self._warnningTimeOptimize()
         self.__px0_initDirectory()
 

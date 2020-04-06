@@ -22,6 +22,7 @@ class FBTA090AlbumSingSurveyWorker(FBTAMainWorker):
 
         self.PHOTO_PATTERN = '\/([0-9]+)\/|\?fbid=([0-9]+)'
         self.url_patt = 'media/set/?set={a_type}.{aid}&type=1'
+        self.url_patt = 'media/set/?set=a.3402290436470767&type=1'
 
     def after_init(self):
         """Read instruction in Lab expr"""

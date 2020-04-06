@@ -4,6 +4,7 @@ import time
 from typing import List, Optional
 
 from fbta_110_00_photos_download_method import FBTA11000PhotosDownloadMethod
+from fbta_browser_constant import FBTABrowserConstant
 from fbta_global_database_manager import FBTADBManager
 from fbta_03_history_download_method import FBTAHistoryDownloaderMethod
 from fbta_main_worker import FBTAMainWorker
@@ -54,20 +55,20 @@ class FBTA11000PhotosDownloadWorker(FBTAMainWorker):
         # int(time.time() - timer_download)
 
         link = self.browser.driver.selector.xpath("//a[contains(.,'View Full Size')]").attrib.get('href')
-        print('********'+link)
+
         if link:
             response = self.browser.goto(self.url_fix(link), stream=True)
 
             if not self.is_http(link):
                 lk = self.__photos_method.get_hops(self.url_fix(link))[0]
                 nlink = unquote(lk)
-                print('+++++++++++++++++'+nlink)
+                print('+++++++++++++++++' + nlink)
                 response = self.browser.goto(nlink, stream=True)
 
             name = self.__getName(response.url)
 
             if doc.get('type') != 'photo':
-                aid = doc.get('aid','')
+                aid = doc.get('aid', '')
                 name = f'a_{aid}_{name}'
 
             imgName = self.save_image_to_file(response, name)
@@ -83,17 +84,19 @@ class FBTA11000PhotosDownloadWorker(FBTAMainWorker):
             page_data = {'downloaded': page_data}
             self.__db.raw_collection_next().update_one({'_id': doc.get('_id')}, {'$set': page_data})
             del response
-            # return imgName
         else:
             """
             WHEN DATA-FT IN DB IS OLDER POST WILL BE DELETED WHEN LOAD PAGE AGAIN FOUND NOT ELEMENTS
             """
-            log(f':PDW: detect CONTENT_NOT_FOUND between download Photos @ {url}')
+            page_data['fail'] = {'url': url, 'type': 'video'}
+            if self.browser.get_browser_status() == FBTABrowserConstant.STATUS_SAVE_AND_IGNORE:
+                log(f':PDW: detect CONTENT_NOT_FOUND between download Photos @ {url}')
+                page_data['fail']['type'] = 'CONTENT_NOT_FOUND'
             self.stat.add_stat('download_fail')
-            page_data['fail'] = url
             page_data['time-download'] = time.time() - timer_download
             page_data = {'downloaded': page_data}
             self.__db.raw_collection_next().update_one({'_id': doc.get('_id')}, {'$set': page_data})
+        self.__db.raw_collection_current().update_one({'_id': doc.get('_id')}, {'$set': self.__db.get_resume_key()})
 
     def __getName(self, url):
         import re as regex
