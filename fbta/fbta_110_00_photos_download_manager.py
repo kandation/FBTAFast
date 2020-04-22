@@ -1,4 +1,3 @@
-
 from fbta_110_00_photos_download_worker import FBTA11000PhotosDownloadWorker
 
 from fbta_main_manager import FBTAMainManager
@@ -18,9 +17,5 @@ class FBTA11000PhotosDownloadManager(FBTAMainManager):
         self._main()
 
     def _set_db_custom_find(self):
-        self.db.set_custom_find({})
-        self.db.get_find_docs_count()
-        print(f"+++++++++++++++++++ DO THIS {self.db.get_find_docs_count()}")
-
-    def stop_main_condition(self) -> bool:
-        pass
+        key = {'user-info.ignore': {'$exists': False}}
+        self.db.set_custom_find(key)

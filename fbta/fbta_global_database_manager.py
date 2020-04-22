@@ -53,6 +53,7 @@ class FBTADBManager:
             self.__current_cursor_new = None
 
             self.collect_current_total_docs_find = -1
+            self.__add_downloaded_recheck_cond()
 
     def get_loop_time(self):
         return 2 if int(0.05 * self.collect_current_total_docs_find) <= 0 else int(
@@ -81,16 +82,22 @@ class FBTADBManager:
         return self.collect_current_total_docs_find
 
     def get_current_docs_by_limit(self, start, length) -> pymongo.cursor.Cursor:
-        log(f':DBMange: \t■■■■■■■ DB Load with startPage=[{start}] to [{start + length - 1}] with[{length}]')
-        return self.__current_collection.find(self.__find_condition, no_cursor_timeout=True).skip(start).limit(length)
+        log(
+            f':DBMange: \t■■■■■■■ DB Load with startPage=[{start}] to [{start + length - 1}] with[{length}] @{self.__find_condition}')
+
+        return self.__current_collection.find(self.__find_condition, no_cursor_timeout=True).skip(start).limit(
+            length)
+
+    def __add_downloaded_recheck_cond(self):
+        self.__find_condition = {'manager-downloaded-recheck': {'$exists': False},
+                                 # 'downloaded-recheck': {'$exists': False}
+                                 }
 
     def set_custom_find(self, cond: dict, recheck_key=True):
-        self.__is_use_custom_find = True
-        if recheck_key:
-            cond['downloaded-recheck'] = {'$exists': False}
-            self.__find_condition = cond
-        else:
-            self.__find_condition = cond
+        cond['manager-downloaded-recheck'] = {'$exists': False}
+        # if recheck_key:
+        #     cond['downloaded-recheck'] = {'$exists': False}
+        self.__find_condition = cond
 
     def get_current_docs(self) -> pymongo.cursor.Cursor:
         log(f':DBMange: \t■■■■■■■ DB Load Full')
@@ -169,12 +176,25 @@ class FBTADBManager:
     def raw_collection_current(self) -> pymongo.collection:
         return self.__current_collection
 
+    def collection_current_downloaded(self, id):
+        self.raw_collection_current().update_one({'_id': id}, {'$set': self.get_resume_key()})
+
+    def collection_current_downloaded_manager(self, id):
+        self.raw_collection_current().update_one({'_id': id}, {'$set': self.get_manager_resume_key()})
+
     def get_find_condition(self) -> dict:
         return self.__find_condition
+
+    def raw_db(self) -> pymongo.mongo_client.database.Database:
+        return self.__db
 
     @staticmethod
     def get_resume_key() -> dict:
         return {'downloaded-recheck': True}
+
+    @staticmethod
+    def get_manager_resume_key() -> dict:
+        return {'manager-downloaded-recheck': True}
 
     def update_first_find_total(self):
         self.total_docs_first_find = self.getCurrentCollection_num()

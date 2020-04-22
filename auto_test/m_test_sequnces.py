@@ -8,7 +8,7 @@ if __name__ == '__main__':
     configs = FBTAConfigs()
 
     settings.kill_driver_on_end = True
-    settings.driver_path = r'./Driver/chromedriver_79.exe'
+    settings.driver_path = r'./Driver/chromedriver_81.exe'
     settings.dir_cookies = r'./cookies/'
     settings.dir_save_path = r'../save/'
     settings.use_nodeMaster_loadCookie = True
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     # settings.date_process = [2019, 8, 1]
     # settings.date_process = [2019, 10, 1]
     # settings.date_process = [2020, 1, 1]
-    # settings.date_process = [2020, 1, 1]
+    settings.date_process = [2020, 4, 20]
     settings.dir_path_detail = settings.DIR_DETAIL_NEW_ALL_RUN
     # settings.db_name = 'fbta_20190827_1544'
     # settings.db_name = 'fbta_20190906_1220'
@@ -33,15 +33,21 @@ if __name__ == '__main__':
     # settings.db_name = 'fbta_20191114_1901'
     # settings.db_name = 'fbta_20200202_1816'
     # settings.db_name = 'fbta_20200226_1437'
-    settings.db_name = 'fbta_20200404_1650'
+    # settings.db_name = 'fbta_20200404_1650'
     # settings.db_name = 'fbta_20200405_0314'
+    # settings.db_name = 'fbta_20200404_1650'
+    # settings.db_name = 'fbta_20200407_2208'
+    # settings.db_name = 'fbta_20200422_0329'
     # db = client.get_database('fbta_20190827_1544')
     # db = client.get_database('fbta_20190827_1544')
     # db = client.get_database('fbta_20190619_0031')
     # db = client.get_database('fbta_20190827_2027')
 
     # settings.test_step = [0, 5, 6]
-    settings.test_step = [0, 11]
+    # settings.test_step = [0,1,2,3,4,5]
+    # settings.test_step = [0, 11]
+    # settings.test_step = [0, 1,2,3,4]
+    # settings.test_step = [0,15]
     # settings.use_resume = True
 
 

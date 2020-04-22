@@ -17,6 +17,3 @@ class FBTAHistoryDownloadManager(FBTAMainManager):
 
     def main(self):
         self._main()
-
-    def stop_main_condition(self) -> bool:
-        pass

@@ -38,6 +38,9 @@ def data_classify(m_source):
             link_optional = px.xpath('@href').getall()
             link_type = 'photo' if lenght[0] == 1 else 'album'
 
+            if 'story' in link_optional:
+                link_type = 'unknown'
+
         if lenght[1] == 1:
             link_type = 'video'
             video_url = unquote(vx.xpath('@href').get())

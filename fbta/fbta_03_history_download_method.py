@@ -122,18 +122,19 @@ class FBTAHistoryDownloaderMethod:
             'history-cluster-id': self.slave_name
         }
 
-    def addPageToDb(self):
-        addToDBProcessTime = time.time()
-        while True:
-            try:
-                self.db.next_collection_insert_one(self.page)
-                break
-            except:
-                log('\t\t>$ [{name}] insert Error'.format(name=self.slave_name))
-                if time.time() - addToDBProcessTime >= 60:
-                    log('\t\t>$ [{name}] insert Error AND GIVE UP'.format(name=self.slave_name))
-                    break
-                time.sleep(random.random())
+    def addPageToDb(self, doc_id):
+        self.db.next_collection_insert_one(self.page)
+        # addToDBProcessTime = time.time()
+        # while True:
+        #     try:
+        #         self.db.next_collection_insert_one(self.page)
+        #         break
+        #     except:
+        #         log('\t\t>$ [{name}] insert Error'.format(name=self.slave_name))
+        #         if time.time() - addToDBProcessTime >= 60:
+        #             log('\t\t>$ [{name}] insert Error AND GIVE UP'.format(name=self.slave_name))
+        #             break
+        #         time.sleep(random.random())
 
     def hasTimeline(self):
         return self.__checkTimeline()['code'] == 1

@@ -20,32 +20,16 @@ class FBTAYearBox:
         self.node_master = master_node
         self.browser = FBTAWorkerBrowserS(master_node)
         self.browser.start_browser()
-        self.yearbox = None
+        self.year_box = None
 
     def run(self):
         self.__goto()
-        self.yearbox = self.__findMonthEachYear()
-
-    def hasYearboxFile(self, dir='./'):
-        import os
-        print(dir + 'yearbox.json')
-        return os.path.exists(dir + 'yearbox.json')
+        self.year_box = self.__findMonthEachYear()
 
     def getYearbox(self) -> dict:
-        if self.yearbox is None:
+        if self.year_box is None:
             self.run()
-        return self.yearbox
-
-    def save(self, dir='./'):
-        self.getYearbox()
-        with open(dir + 'yearbox.json', mode='w', encoding='utf8') as fo:
-            fo.write(dumps(self.yearbox))
-        log('Save Yearbox OK')
-
-    def load(self, dir='./'):
-        with open(dir + 'yearbox.json', mode='r', encoding='utf8') as fo:
-            self.yearbox = loads(fo.read())
-        log('Load Yearbx OK')
+        return self.year_box
 
     def __findMonthEachYear(self):
         nowMonth_SLN = self.__getPreloadMonth()
@@ -56,7 +40,7 @@ class FBTAYearBox:
         print('findMonthEachYear')
 
         for year_num in year_box:
-            each_month_url = self.node_master.url.getUrlFacebook()+year_box[year_num]['url']
+            each_month_url = self.node_master.url.getUrlFacebook() + year_box[year_num]['url']
             self.browser.goto(each_month_url)
             data_all_month = self.__getPreloadMonth()
             year_box[year_num]['month'] = self.__scanMonth(data_all_month)
@@ -108,7 +92,6 @@ class FBTAYearBox:
                 temp_['url'] = year_link
                 temp_['year'] = year_link_element.xpath('text()').get()
                 log_r[str(header_year)] = temp_
-
 
         return log_r
 

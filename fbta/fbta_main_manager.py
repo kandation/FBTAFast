@@ -29,8 +29,10 @@ from abc import ABCMeta, abstractmethod
 class FBTAMainManager(metaclass=ABCMeta):
     def __init__(self, node_master: FBTANodeMaster,
                  db_collection_name,
-                 slave_class_name: classmethod):
+                 slave_class_name: classmethod,
+                 **args):
 
+        self.__wait_me_to_load_db_i_sus = False
         self.__add_job_stat_no_job = 0
         self.__add_job_stat = 0
         self.__add_job_fail_stat = 0
@@ -40,6 +42,8 @@ class FBTAMainManager(metaclass=ABCMeta):
         self.__db_currsor_is_finiseh = True
         self.say_hello_time = time.time()
         self.__slave_class_name = slave_class_name
+
+        self.args = args if args else None
 
         self.__timer = FBTATimer()
 
@@ -77,7 +81,12 @@ class FBTAMainManager(metaclass=ABCMeta):
 
         self.__time_estimate = 'n/a'
 
+        self.__job_check_id = set()
+
         self.__initSettings()
+        self.__last_id = None
+
+        self.__jobs_list_fast = []
 
     @property
     def stat(self) -> FBTAStatistic:
@@ -106,10 +115,6 @@ class FBTAMainManager(metaclass=ABCMeta):
     @workers.deleter
     def workers(self):
         self.__workers = []
-
-    @abstractmethod
-    def stop_main_condition(self) -> bool:
-        pass
 
     def __run_cluster(self):
         for workser in self.workers:
@@ -149,6 +154,8 @@ class FBTAMainManager(metaclass=ABCMeta):
         self.__method_wait_worker_until_ready()
         log(':mManage: ( _)0*´¯`·.¸.·´¯`°Q(_ )  Start Main Manager')
 
+        self.__clear_db_manager_downloaded_key()
+
         self._set_db_custom_find()
         self.__init_time_event()
         self.db.update_first_find_total()
@@ -159,7 +166,10 @@ class FBTAMainManager(metaclass=ABCMeta):
         while self.__is_manager_running:
             self.__break_emergency()
 
-            self.__method_add_jobs()
+            if not self.__worker_stop_signal:
+                self.__method_add_jobs()
+            else:
+                self.__method_check_worker_stop()
 
             self.__show_all_waiting_job()
 
@@ -168,9 +178,11 @@ class FBTAMainManager(metaclass=ABCMeta):
             self.__method_say_hello()
 
             self.__method_loop_big_reporter()
+
         self.__method_loop_big_report_show(0)
 
         self.__endThread()
+        self.__clear_db_manager_downloaded_key()
 
     def __method_loop_big_reporter_time_switching(self):
         c = (self.db.db_index - self.db.clusters_num)
@@ -253,7 +265,10 @@ class FBTAMainManager(metaclass=ABCMeta):
     def __create_workers(self, class_name: classmethod):
         log(f':mMange: ■■■■■■■ Create Worker with [{self.db.clusters_num}] Clusters')
         for worker_id in range(self.db.clusters_num):
-            self.workers.append(class_name(self.__node_master, self.db))
+            if self.args:
+                self.workers.append(class_name(self.__node_master, self.db, self.args))
+            else:
+                self.workers.append(class_name(self.__node_master, self.db))
             self.__create_workers_method(class_name, worker_id)
 
     def __create_workers_method(self, class_name: classmethod, worker_id):
@@ -304,7 +319,7 @@ class FBTAMainManager(metaclass=ABCMeta):
     def __method_check_worker_stop_cursor(self):
         pass
 
-    def __method_check_worker_stop(self, worker):
+    def __method_check_worker_stop(self):
         """
         ไม่มีงานมาให้จริงทำการตรวจว่า Worker โหลดเสร็จยัง พร้อมทั้งสั่งไว้ล่วงหน้าว่าให้หยุด
         พอรู้ว่าหยุดก็นับไปเรื่อยๆ
@@ -313,14 +328,12 @@ class FBTAMainManager(metaclass=ABCMeta):
         """
         self.__stop_counter = 0
         if self.__worker_stop_signal:
-            if not worker.is_end():
-                log(f':mManage: manager send end job to {worker.name}')
-            worker.end_job()
-            if worker.is_end():
-                self.__stop_counter += 1
-
-    def __method_check_worker_is_respond(self):
-        return self.db.docs_list_waiting
+            for worker in self.workers:
+                if not worker.is_end():
+                    log(f':mManage: manager send end job to {worker.name}')
+                worker.end_job()
+                if worker.is_end():
+                    self.__stop_counter += 1
 
     def __method_all_alive(self):
         p = [w.is_end() for w in self.workers]
@@ -340,7 +353,6 @@ class FBTAMainManager(metaclass=ABCMeta):
         Set First Cursor point to first row
         """
         self.__db_current_coll_cursor = self.__db.get_current_docs_by_limit(0, self.__db_batch_length)
-        # self.__add_job_stat += self.__db_current_coll_cursor.count()
 
     def __statistic_auto_save(self):
         worker_stat = []
@@ -372,7 +384,6 @@ class FBTAMainManager(metaclass=ABCMeta):
             worker_stat
         )
 
-        print('STTTTT', self.__add_job_stat)
 
     def __init_time_event(self):
         self.__timer.add('big_loop_report')
@@ -382,25 +393,22 @@ class FBTAMainManager(metaclass=ABCMeta):
         ฟังก์ชั่นสำคัญแต่ไม่เขียนอะ หยิ่ง
         :return: doc {dict}
         """
-        while True:
+        if not self.__worker_stop_signal:
             try:
-                cr_doc = self.__db_current_coll_cursor.next()
-                # ใช้สำหรับการ skip กรณีโหลดซ้ำ DB เดิม
-                return cr_doc
+                fn = self.__db_current_coll_cursor.next()
+                self.db.collection_current_downloaded_manager(fn.get('_id'))
+                return fn
 
             except StopIteration:
-                # TODO: 630406 คิดว่าบรรทัดนี้อาจจะทำงานมากเกินความจำเป็น ลองตรวจสอบดูด้วย
-                estimate_doc = self.__db.raw_collection_current().count_documents(self.db.get_find_condition(), limit=1)
-
+                estimate_doc = self.__db.raw_collection_current().count_documents(self.db.get_find_condition(),
+                                                                                  limit=1)
                 if estimate_doc > 0:
                     self.__db_current_coll_cursor = self.__db.get_current_docs_by_limit(0, self.__db_batch_length)
-                    # self.__add_job_stat += self.__db_current_coll_cursor.count()
+                    self.__wait_me_to_load_db_i_sus = False
                 else:
-                    exit_db = True
-                    break
-        if exit_db:
-            self.__worker_stop_signal = True
-            return {}
+                    self.__worker_stop_signal = True
+
+        return {}
 
     def __method_add_jobs(self):
         # time.sleep(0.01+random()/100)
@@ -408,22 +416,25 @@ class FBTAMainManager(metaclass=ABCMeta):
         jobs: pymongo.cursor.Cursor
         jobs: Optional[str]
 
-        for worker_id, worker in enumerate(self.workers):
-            time.sleep(0.1 + random() / 10)
+        for worker in self.workers:
             if worker:
                 if worker.isErrorFatal:
                     log(':mMange: ■■■■■■■ ERROR FATAL EXIT ■■■■■■■', worker)
                     exit()
 
                 if worker.is_waiting_job():
-                    jobs = self.__job_status_complete
-                    if self.__job_status_complete is None:
-                        # จะของงานต่อไปเมื่อไม่มีงานค้างที่ผิดพลาดในระบบ
-                        jobs = self.get_docs_in_cursor_with_limit()
-                        self.db.db_index += 1
+                    # jobs = self.__job_status_complete
+                    jobs = self.get_docs_in_cursor_with_limit()
 
                     if jobs:
+                        if jobs.get('_id') in self.__job_check_id:
+                            self.__add_job_stat += 1
+                            jobs = None
+                        else:
+                            self.__job_check_id.add(jobs.get('_id'))
 
+                    if jobs:
+                        self.db.db_index += 1
                         # ถ้ามีงานลองใส่ลงใน cluster ก่อนถ้าใส่ได้มันก็จะทำงาน ถ้าไม่ก็ส่งให้คนอื่น
                         add_job_status = worker.add_job(jobs)
 
@@ -433,12 +444,10 @@ class FBTAMainManager(metaclass=ABCMeta):
                             self.__add_job_fail_stat += 1
                             continue
 
-                        self.__add_job_stat_no_job += 1
                         self.__job_status_complete = None
+
                         self.__stat.worker_couter_docs += 1
 
-                    else:
-                        self.__method_check_worker_stop(worker)
             else:
                 print(f'mMange:{datetime.datetime.now()} Some Worker will be INIT please wait')
                 self.__method_wait_worker_until_ready()
@@ -446,3 +455,12 @@ class FBTAMainManager(metaclass=ABCMeta):
 
     def __update_current_index(self):
         self.db.update_coll_current_index()
+
+
+    def __clear_db_manager_downloaded_key(self):
+        key = {"manager-downloaded-recheck": {'$exists': True}}
+        self.db.raw_collection_current().update_many(key, {'$unset': {"manager-downloaded-recheck": True}})
+
+    def clear_db_downloaded_key(self):
+        key = {"downloaded-recheck": {'$exists': True}}
+        self.db.raw_collection_current().update_many(key, {'$unset': {"downloaded-recheck": True}})

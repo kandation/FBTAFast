@@ -96,7 +96,7 @@ class FBTA11000PhotosDownloadWorker(FBTAMainWorker):
             page_data['time-download'] = time.time() - timer_download
             page_data = {'downloaded': page_data}
             self.__db.raw_collection_next().update_one({'_id': doc.get('_id')}, {'$set': page_data})
-        self.__db.raw_collection_current().update_one({'_id': doc.get('_id')}, {'$set': self.__db.get_resume_key()})
+        self.__db.collection_current_downloaded(doc.get('_id'))
 
     def __getName(self, url):
         import re as regex
@@ -108,7 +108,8 @@ class FBTA11000PhotosDownloadWorker(FBTAMainWorker):
 
     def save_image_to_file(self, image, name):
         names = '{dirname}/{suffix}'.format(
-            dirname=self.__node_master.settings.getProjectPath(self.__node_master.configs.dir_seq_03_photos),
+            # dirname=self.__node_master.settings.getProjectPath(self.__node_master.configs.dir_seq_03_photos),
+            dirname=self.__node_master.settings.dir_path,
             suffix=name)
         with open(names, 'wb') as out_file:
             shutil.copyfileobj(image.raw, out_file)

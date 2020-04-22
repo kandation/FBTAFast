@@ -57,6 +57,8 @@ class FBTASettings:
         self.dir_cookies = r'./'
         self.dir_yearbox = r'./'
 
+        self.__ignore_name = -1
+
     @property
     def run_fast_cluster_info(self):
         return self.__run_fast_cluster_info
@@ -337,3 +339,20 @@ class FBTASettings:
     @run_fast_all.setter
     def run_fast_all(self, cond=False):
         self.__run_fast_all = bool(cond)
+
+    def __load_ignore_name(self):
+        ignore_name = './config/ignore_name.txt'
+        name_list = []
+        if os.path.exists(ignore_name):
+            with open(ignore_name, mode='r') as fo:
+                name_list = [str(fr).strip() for fr in fo.readlines()]
+            # Remove Empty list
+            name_list = [f for f in name_list if f]
+
+        return name_list
+
+    @property
+    def ignore_names(self):
+        if self.__ignore_name == -1:
+            self.__ignore_name = self.__load_ignore_name()
+        return self.__ignore_name

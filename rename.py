@@ -27,5 +27,6 @@ if os.path.isfile(ori_file):
         n = f'{path}save_log_{logfile}_w_{str(same_file).zfill(4)}.txt'
         os.rename(ori_file, n + f'')
     else:
-        dae = datetime.datetime.now().strftime('%Y_%m_%d_%H-%M-%S')
-        os.rename(ori_file, f'{path}log_{dae}.txt')
+        pass
+        # dae = datetime.datetime.now().strftime('%Y_%m_%d_%H-%M-%S')
+        # os.rename(ori_file, f'{path}log_{dae}.txt')
