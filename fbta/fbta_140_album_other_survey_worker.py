@@ -13,7 +13,7 @@ from fbta_node_master import FBTANodeMaster
 from fbta_log import log
 
 
-class FBTA090AlbumSingSurveyWorker(FBTAMainWorker):
+class FBTA140AlbumOtherSurveyWorker(FBTAMainWorker):
     def __init__(self, node_master: FBTANodeMaster, db: FBTADBManager):
         self.__node_master = node_master
         self.__db = db
@@ -31,39 +31,21 @@ class FBTA090AlbumSingSurveyWorker(FBTAMainWorker):
     def slave_method(self, docs):
         self.single_surway(docs)
 
-    def find12img(self, url_new):
-        data_ret = {
-            'url': str(url_new),
-            'source': '',
-            'is-more': '',
-            'photos': []
-        }
-        self.browser.goto(url_new)
-        sel_new = Selector(self.browser.driver.page_source)
-        data_ret['source'] = self.browser.driver.page_source
-        ks = sel_new.css('#thumbnail_area > a')
-        more_items = sel_new.css('#m_more_item > a')
-
-        if more_items:
-            more_item_link = more_items[0].attrib.get('href')
-            data_ret['is-more'] = more_item_link
-
-        for kps in ks:
-            jsp = kps.attrib.get('href')
-            data_ret['photos'].append(jsp)
-
-        return data_ret
-
     def single_surway(self, doc):
+        """
+        ยังไม่ทำ is-more ที่เกินกว่าที่เห็บ ตอนนี้ ขก
+        :param doc:
+        :return:
+        """
         timer_dl_start = time.time()
-        fb_url_m = 'https://m.facebook.com/'
-        a_type = doc.get('type')
-        aid = doc.get('aid')
+        load_url = doc.get('load-url')
 
-        url = fb_url_m + self.url_patt.format(a_type=a_type, aid=aid)
+        self.browser.goto(load_url)
 
-        data_insert = {'photo-cluster': [self.find12img(url)], 'download-time': time.time() - timer_dl_start}
+        data_insert = {
+            'source': self.browser.driver.page_source,
+            'time': time.time() - timer_dl_start
+        }
 
-        print(f":AlbumSGSWorker: Get Album Photos Single {aid} @{data_insert['download-time']}")
         self.__db.raw_collection_next().update_one({'_id': doc.get('_id')}, {'$set': data_insert})
         self.__db.collection_current_downloaded(doc.get('_id'))

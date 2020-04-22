@@ -10,7 +10,19 @@ from bson.objectid import ObjectId
 fb_url_m = 'https://m.facebook.com/'
 
 
+def get_photo_fbid(url):
+    PHOTO_PATTERN = '\/([0-9]+)\/\?|\?fbid=([0-9]+)|&id=([0-9]+)&source|\?story_fbid=([0-9]+)'
+    fbid_result = regex.findall(PHOTO_PATTERN, url)
+    return ''.join(fbid_result[0])
+
+
 def main(db_name):
+    """
+    ตัวนี้ยังไม่สมบูรณ์ ถ้ามีกรณีที่ อัลบัมมีวีดีโออยู่ มันก็ไม่รู้นะ มันก็ส่งไปตามปกติ
+    :param db_name:
+    :return:
+    """
+
     client = MongoClient()
     db = client.get_database(db_name)
     coll_album = db.get_collection('98_album_no_duplicate')
@@ -18,8 +30,6 @@ def main(db_name):
 
     key = {'photo-cluster.0.is-more': ''}
     docs_post = coll_album.find(key)
-
-    PHOTO_PATTERN = '\/([0-9]+)\/\?|\?fbid=([0-9]+)|&id=([0-9]+)&source'
 
     photos_list = {}
     counter = 0
@@ -31,14 +41,16 @@ def main(db_name):
         aid = doc['aid']
         for pl in photo_db_list:
             str_lnk = ''.join(pl)
-            fbid_result = regex.findall(PHOTO_PATTERN, str_lnk)
+            photo_fbid = get_photo_fbid(str_lnk)
             if 'video' in pl:
-                print('999999999999999999999999999')
-                exit()
-            print(fbid_result, pl)
-            photo_fbid = ''.join(fbid_result[0])
+                """
+                ไม่รู้ใส่มาทำไมแต่อย่าลืมทดสอบหา ลิงก์ที่เป็นวีดีโอด้วย
+                แต่ตรวจดูละ ไร้สาระมาก มันไม่มี ถ้าจะมีมันต้องรู้ที่หน้า story แล้ว หรือไม่ก็เข้าไปตรวจตอนโหลดรูป
+                """
+                pass
+            print(photo_fbid, pl)
 
-            data_insert['_id'] = ObjectId()
+            # data_insert['_id'] = ObjectId()
             data_insert['photo_id'] = photo_fbid
             data_insert['aid'] = aid
             data_insert['type'] = 'album2photo'
@@ -52,5 +64,6 @@ def main(db_name):
 
     print('@', counter)
 
+
 if __name__ == '__main__':
-    main('fbta_20200404_1650')
+    main('fbta_20200405_0314')

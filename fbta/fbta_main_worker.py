@@ -140,8 +140,8 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
     def isErrorFatal(self, cond):
         self.__error_fatal = bool(cond)
 
-    @abstractmethod
     def after_init(self):
+        """ For user custom config"""
         pass
 
     def run(self):
@@ -222,6 +222,7 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
             pass
 
         self.__init_browser_secure()
+        self.after_init()
 
     def join(self, timeout: Optional[float] = ...) -> str:
         Thread.join(self)
@@ -281,6 +282,7 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
 
             except BaseException as e:
                 log(f'mWorker: ???? [{self.name}] Thread Die by something [{e}]')
+                # raise e
                 if self.__loop_try_agin > 10:
                     self.sos_signal = True
                 else:
@@ -326,6 +328,7 @@ class FBTAMainWorker(Thread, metaclass=ABCMeta):
                 f'({dift_process_time}) AVR={average_process_time}')
 
             self.download_current.end_download()
+
 
         else:
             self.download_current.end_download()

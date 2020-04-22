@@ -150,6 +150,8 @@ if __name__ == '__main__':
                 name = f'a_{name}'
 
             print(name, end='\n\n')
+        else:
+            print(url)
 
         # if link:
         #     response = self.browser.goto(self.url_fix(link), stream=True)

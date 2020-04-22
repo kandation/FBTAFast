@@ -19,24 +19,24 @@ class FBTAHistoryDownloadWorker(FBTAMainWorker):
 
     def slave_method(self, docs):
         print(f':History_Worker: [{self.name}] Slave method Work on', docs['title'])
-        self.__activity_download(docs['url'])
+        self.__activity_download(docs['url'], docs.get('_id'))
         print(f':History_Worker:\t\t[{self.name}] WORK [{docs["_id"]}] finished [{self.browser.title}]')
 
-    def __activity_download(self, url):
+    def __activity_download(self, url, doc_id):
         self.node_worker.goto_Secure(url)
         pageCounter = 0
         while True:
             print(f':History_Worker: {self.name} isFound Timeline={self.__activity.hasTimeline()}')
             if self.__activity.hasTimeline():
                 if self.__activity.getPage_NextMoreLoad(True, self.name):
-                    self.__activity.addPageToDb()
-                    ss = self.node_worker.screenshot_fullpage(self.__activity.page['title'],
-                                                              self.configs.dir_seq_01_Activity)
-                    if ss:
-                        self.stat.add_stat('hdw_screenshot_success')
-                    else:
-                        self.stat.add_stat('hdw_screenshot_fail')
-                    self.stat.add_stat('hdw_couter_page')
+                    self.__activity.addPageToDb(doc_id)
+                    # ss = self.node_worker.screenshot_fullpage(self.__activity.page['title'],
+                    #                                           self.configs.dir_seq_01_Activity)
+                    # if ss:
+                    #     self.stat.add_stat('hdw_screenshot_success')
+                    # else:
+                    #     self.stat.add_stat('hdw_screenshot_fail')
+                    # self.stat.add_stat('hdw_couter_page')
                 else:
                     __current_url = self.__activity.page.get('current-url')
                     __next_url = self.__activity.page.get('next-url')
@@ -51,4 +51,5 @@ class FBTAHistoryDownloadWorker(FBTAMainWorker):
                 self.node_worker.goto_Secure(self.__activity.getNextUrl())
             else:
                 log(f':History_Worker: ✖✖✖ [{self.name}] Break Because time least than settings')
+                self.__db.collection_current_downloaded(doc_id)
                 break

@@ -1,16 +1,18 @@
 from parsel import Selector
 import json
+from typing import List, Optional
 
 
 def find_max_dataft(dataft_list):
-    max_indexx = [len(x.attrib['data-ft']) for x in dataft_list]
-    max_index = max_indexx.index(max(max_indexx))
-    return dataft_list[max_index].attrib['data-ft']
+    mx_lenght = [len(x) for x in dataft_list]
+    mx = mx_lenght.index(max(mx_lenght))
+    return dataft_list.pop(mx)
 
 
 def find_dataft(m_source):
     bs = Selector(m_source)
-    dataft_list: List[Optional[Selector]] = bs.css("div[data-ft]")
+    dataft_list: List[Optional[Selector]] = bs.css("*::attr(data-ft)")
+    dataft_list = dataft_list.getall()
 
     data_ft_raw = {
         'dataft-raw': {},

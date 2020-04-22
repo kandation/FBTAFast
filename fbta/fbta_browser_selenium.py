@@ -76,7 +76,7 @@ class FBTABrowserSelenium(FBTAMainBrowser):
                 print('ChromeDriver not support chrome version please Download '
                       'https://chromedriver.chromium.org/downloads\n'
                       'And Edit ChromeDriver path in your settings')
-                raise e
+                # raise e
                 exit()
             except BaseException as base_exp:
                 raise base_exp
@@ -107,4 +107,5 @@ class FBTABrowserSelenium(FBTAMainBrowser):
         self.driver.get(url)
 
     def __del__(self):
-        self.driver.close()
+        if self.driver:
+            self.driver.close()

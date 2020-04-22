@@ -8,7 +8,7 @@ from pymongo import MongoClient
 fb_url_m = 'https://m.facebook.com/'
 fb_url_w = 'https://www.facebook.com/'
 
-db_name = 'fbta_20200202_1816'
+db_name = 'fbta_20200412_1808'
 
 
 def write_new_json(new_onehot):
@@ -54,4 +54,4 @@ if __name__ == '__main__':
         dataft_list: List[Optional[Selector]] = bs.css("div[data-ft]")
         ref = db.dereference(doc.get('history'))
         simplify = ref.get('header').get('simplify')
-        print(ref.get('header'))
+        print(ref.get('header').get('fulltext'))

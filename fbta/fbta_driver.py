@@ -19,7 +19,6 @@ class FBTADriver:
         self.__node_master = node_master
         self.__settings = node_master.settings
         self.__configs = node_master.configs
-        self.__soup: BeautifulSoup = None
         self.__selector: Selector = None
         self.__request_Timeout = None
         self.__raw_url = 'init'
@@ -56,10 +55,8 @@ class FBTADriver:
             log(f'>> :Driver: stream={stream} get {url} ')
         self._respond = self._session.get(url, headers=self.__header, stream=stream, allow_redirects=True)
         if self._respond.encoding is not None:
-            self.__soup = BeautifulSoup(self._respond.content, 'lxml')
             self.__selector = Selector(self._respond.text)
         else:
-            self.__soup = None
             self.__selector = None
 
         return self._respond
@@ -79,7 +76,8 @@ class FBTADriver:
 
     @property
     def page_source(self):
-        return str(self._respond.content.decode(encoding=self._respond.encoding, errors='ignore'))
+        # return str(self._respond.content.decode(encoding=self._respond.encoding, errors='ignore'))
+        return self._respond.text
 
     def get_title(self):
         # return self.__soup.find('title').text
@@ -123,9 +121,6 @@ class FBTADriver:
     def selector(self) -> Selector:
         return self.__selector
 
-    @property
-    def bs(self) -> BeautifulSoup:
-        return self.__soup
 
     def find_element_by_name(self, name):
         return self.__selector.css(f'[name="{str(name)}"]').get()

@@ -18,7 +18,7 @@ def main(db_name):
     key = {'description.story.link-info.type': "photo"}
     docs_post = collection.find(key)
 
-    PHOTO_PATTERN = '\/([0-9]+)\/\?|\?fbid=([0-9]+)'
+    PHOTO_PATTERN = '\/([0-9]+)\/\?|\?fbid=([0-9]+)|\?story_fbid=([0-9]+)'
 
     photos_list = {}
     counter = 0
@@ -61,3 +61,7 @@ def main(db_name):
         counter += 1
 
         coll_photo.insert_one(data_insert)
+
+
+if __name__ == '__main__':
+    main('fbta_20200423_0121')

@@ -111,7 +111,7 @@ class FBTABrowserTitle(metaclass=ABCMeta):
                 if str(key).lower().strip() in removed_word:
                     log('@DEBUG_SHOWSOURCE', self.driver.title, self.driver.raw_url)
                     with open('./Debug/debug_' + str(datetime.datetime.now().strftime('%Y%m%d_%H%M%S')) + '.log.txt',
-                              mode='w', encoding='utf8') as fo:
+                              mode='w',) as fo:
                         fo.write(self.driver.raw_url)
                         fo.write('\n')
                         fo.write(self.driver.page_source)
