@@ -1,7 +1,7 @@
 import os
 
-from fbta_configs import FBTAConfigs
-from fbta_settings import FBTASettings
+from fbta.fbta_configs import FBTAConfigs
+from fbta.fbta_settings import FBTASettings
 
 
 class FBTAMkdir:

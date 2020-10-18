@@ -3,12 +3,12 @@ import shutil
 import time
 from typing import List, Optional
 
-from fbta_06_photos_download_method import FBTAPhotosDownloadMethod
-from fbta_global_database_manager import FBTADBManager
-from fbta_03_history_download_method import FBTAHistoryDownloaderMethod
-from fbta_main_worker import FBTAMainWorker
-from fbta_node_master import FBTANodeMaster
-from fbta_log import log
+from fbta.fbta_06_photos_download_method import FBTAPhotosDownloadMethod
+from fbta.fbta_global_database_manager import FBTADBManager
+from fbta.fbta_03_history_download_method import FBTAHistoryDownloaderMethod
+from fbta.fbta_main_worker import FBTAMainWorker
+from fbta.fbta_node_master import FBTANodeMaster
+from fbta.fbta_log import log
 
 
 class FBTAPhotosDownloadWorker(FBTAMainWorker):

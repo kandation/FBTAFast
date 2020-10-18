@@ -1,11 +1,11 @@
 import time
 
-from fbta_log import log
+from fbta.fbta_log import log
 from urllib.parse import unquote
-from fbta_configs import FBTAConfigs
-from fbta_driver import FBTADriver
-from fbta_node_master import FBTANodeMaster
-from fbta_settings import FBTASettings
+from fbta.fbta_configs import FBTAConfigs
+from fbta.fbta_driver import FBTADriver
+from fbta.fbta_node_master import FBTANodeMaster
+from fbta.fbta_settings import FBTASettings
 
 from parsel import Selector
 from pymongo import MongoClient

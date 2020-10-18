@@ -13,12 +13,12 @@ from parsel import Selector
 
 from pymongo import MongoClient
 
-from fbta_log import log
+from fbta.fbta_log import log
 
-from fbta_100_00_create_photo_from_album import get_photo_fbid
+from fbta.fbta_100_00_create_photo_from_album import get_photo_fbid
 
 
-class FBTA150MoreAlbumPreProcess():
+class FBTA0901MoreAlbumPreProcess():
     def __init__(self):
         """  """
         pass
@@ -49,8 +49,7 @@ class FBTA150MoreAlbumPreProcess():
         """
         client = MongoClient()
         db = client.get_database(db_name)
-        collection = db.get_collection('aa_album_url')
-        coll_photo_tank = db.get_collection('99_photos_tank')
+        collection = db.get_collection('98_album_no_duplicate')
 
         key = {}
         docs_post = collection.find(key)
@@ -59,41 +58,17 @@ class FBTA150MoreAlbumPreProcess():
         log(f':MORE_ALBUM: Docs in collection = {collection.count_documents(key)}')
 
         for doc in docs_post:
-            source = doc.get('source')
-            is_end = doc.get('is-end')
-            ref_album = doc.get('ref')
+            cluster = doc.get('photo-cluster')
+            source = cluster.get('source')
 
-            refobj = db.dereference(ref_album)
-            aid = refobj.get('aid')
             px = self.find12img(source)
+            cluster.update(px)
 
-            ref_new_album_url = DBRef(collection.name, doc.get('_id'), db.name)
-
-            # When Album has update this line is active
-            if is_end and px['is-more'] != '':
-                px['re-index'] = True
-
-            data = {'detail': px}
-            collection.update({'_id': doc.get('_id')}, {'$set': data})
-
-            # Step 02 : Add photo url to photo_tank
-            for photo_url in px['photos']:
-                photo_fbid = get_photo_fbid(photo_url)
-                photo_tank_data = {}
-                photo_tank_data['photo-id'] = photo_fbid
-                photo_tank_data['aid'] = aid
-                photo_tank_data['type'] = 'album2photo'
-                photo_tank_data['url'] = photo_url
-                photo_tank_data['refs'] = {}
-                photo_tank_data['refs']['more'] = ref_new_album_url
-                photo_tank_data['refs']['album'] = ref_album
-
-                print(photo_tank_data)
-                coll_photo_tank.insert_one(photo_tank_data)
+            collection.update({'_id': doc.get('_id')}, {'$set': doc})
 
         print('Finished', time() - time_all_start)
 
-
-if __name__ == '__main__':
-    nno = FBTA150MoreAlbumPreProcess()
-    nno.main('fbta_20200422_0329')
+#
+# if __name__ == '__main__':
+#     nno = FBTA0901MoreAlbumPreProcess()
+#     nno.main('fbta_20200422_0329')

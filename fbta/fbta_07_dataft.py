@@ -10,7 +10,7 @@ from typing import List, Optional
 from parsel import Selector
 from pymongo import MongoClient
 
-from fbta_node_master import FBTANodeMaster
+from fbta.fbta_node_master import FBTANodeMaster
 
 
 class FBTADataft:

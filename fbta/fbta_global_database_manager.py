@@ -3,8 +3,8 @@ from typing import List, Optional
 import pymongo
 from pymongo import MongoClient
 
-from fbta_difftime import FBTADifftime
-from fbta_log import log
+from fbta.fbta_difftime import FBTADifftime
+from fbta.fbta_log import log
 
 
 class FBTADBManager:

@@ -5,8 +5,8 @@ import requests
 from bs4 import BeautifulSoup
 from parsel import Selector
 
-from fbta_log import log
-from fbta_node_master import FBTANodeMaster
+from fbta.fbta_log import log
+from fbta.fbta_node_master import FBTANodeMaster
 
 
 class FBTADriver:
@@ -121,7 +121,6 @@ class FBTADriver:
     def selector(self) -> Selector:
         return self.__selector
 
-
     def find_element_by_name(self, name):
         return self.__selector.css(f'[name="{str(name)}"]').get()
         # return self.__soup.select_one(f'[name="{str(name)}"]')
@@ -142,6 +141,15 @@ class FBTADriver:
             for cookie in cookies:
                 self._session.cookies.set(cookie['name'], cookie['value'])
 
+    def __load_cookies_json(self):
+        file_name = self.__settings.dir_cookies + 'fbta_cookies.json'
+        if os.path.exists(file_name):
+            import json
+            cookies = json.loads(open(file_name, mode='r', encoding='utf8').read())
+            for cookie in cookies:
+                if cookie['name'] != 'sameSite':
+                    self._session.cookies.set(cookie['name'], cookie['value'])
+
     def implicitly_wait(self, timeout):
         self.__request_Timeout = timeout
 
@@ -156,3 +164,6 @@ class FBTADriver:
 
     def set_page_load_timeout(self, timeout):
         self.implicitly_wait(timeout)
+
+    def add_cookie_from_file_json(self):
+        self.__load_cookies_json()

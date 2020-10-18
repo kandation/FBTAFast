@@ -1,7 +1,7 @@
 import os, shutil
 
 """
-Move All File ind name_ to SPLIT_DIR
+Move All File in many folders to a folder
 """
 
 import datetime, time, itertools, random

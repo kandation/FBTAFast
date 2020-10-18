@@ -3,11 +3,11 @@ import time
 
 import bson
 
-from fbta_global_database_manager import FBTADBManager
-from fbta_03_history_download_method import FBTAHistoryDownloaderMethod
-from fbta_main_worker import FBTAMainWorker
-from fbta_node_master import FBTANodeMaster
-from fbta_log import log
+from fbta.fbta_global_database_manager import FBTADBManager
+from fbta.fbta_03_history_download_method import FBTAHistoryDownloaderMethod
+from fbta.fbta_main_worker import FBTAMainWorker
+from fbta.fbta_node_master import FBTANodeMaster
+from fbta.fbta_log import log
 from bson.json_util import loads
 
 
@@ -22,6 +22,7 @@ class FBTACardsDownloadWorker(FBTAMainWorker):
         self.__is_chrome_header = args[0].get('chrome_header', False) if args else False
 
     def after_init(self):
+        # if True or self.__is_chrome_header:
         if self.__is_chrome_header:
             # ต้องการเก็บ story Version ใหม่
             self.browser.driver.delete_cookie('noscript')
@@ -67,7 +68,7 @@ class FBTACardsDownloadWorker(FBTAMainWorker):
         if ref:
             # Get ref to '03_post_page'
             photo_docs = self.__db.raw_db().dereference(ref)
-            print('--------------', photo_docs)
+            # print('--------------', photo_docs)
 
             # ไปยัง Story url เดิมกับครั้งแรก
             url = photo_docs.get('url')

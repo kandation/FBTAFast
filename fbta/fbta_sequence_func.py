@@ -1,9 +1,9 @@
 import time
 
-from fbta_difftime import FBTADifftime
-from fbta_log import log, log_header, log_summery
-from fbta_settings import FBTASettings
-from fbta_configs import FBTAConfigs
+from fbta.fbta_difftime import FBTADifftime
+from fbta.fbta_log import log, log_header, log_summery
+from fbta.fbta_settings import FBTASettings
+from fbta.fbta_configs import FBTAConfigs
 
 
 class FBTASequenceFunction:

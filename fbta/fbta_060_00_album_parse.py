@@ -1,7 +1,7 @@
-import fbta_060_01_album_vote as vote
-import fbta_060_02_album_scan as scan
-import fbta_060_03_dataft as dataft
-import fbta_log
+import fbta.fbta_060_01_album_vote as vote
+import fbta.fbta_060_02_album_scan as scan
+import fbta.fbta_060_03_dataft as dataft
+import fbta.fbta_log as fbta_log
 from parsel import Selector
 from pymongo import MongoClient
 from urllib.parse import unquote

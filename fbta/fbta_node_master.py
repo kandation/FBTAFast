@@ -1,12 +1,12 @@
 import time
 import types
 
-from fbta_browser_selenium import FBTABrowserSelenium
-from fbta_browser_constant import FBTABrowserConstant
-from fbta_configs import FBTAConfigs
-from fbta_settings import FBTASettings
+from fbta.fbta_browser_selenium import FBTABrowserSelenium
+from fbta.fbta_browser_constant import FBTABrowserConstant
+from fbta.fbta_configs import FBTAConfigs
+from fbta.fbta_settings import FBTASettings
 
-from fbta_url import FBTAUrl
+from fbta.fbta_url import FBTAUrl
 
 
 class FBTANodeMaster:

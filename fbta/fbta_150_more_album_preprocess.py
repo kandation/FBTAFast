@@ -13,9 +13,9 @@ from parsel import Selector
 
 from pymongo import MongoClient
 
-from fbta_log import log
+from fbta.fbta_log import log
 
-from fbta_100_00_create_photo_from_album import get_photo_fbid
+from fbta.fbta_100_00_create_photo_from_album import get_photo_fbid
 
 
 class FBTA150MoreAlbumPreProcess():

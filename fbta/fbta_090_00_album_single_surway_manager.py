@@ -1,7 +1,7 @@
-from fbta_090_album_single_surway_worker import FBTA090AlbumSingSurveyWorker
+from fbta.fbta_090_00_album_single_surway_worker import FBTA090AlbumSingSurveyWorker
 
-from fbta_main_manager import FBTAMainManager
-from fbta_node_master import FBTANodeMaster
+from fbta.fbta_main_manager import FBTAMainManager
+from fbta.fbta_node_master import FBTANodeMaster
 
 
 class FBTA090AlbumSingSurvey(FBTAMainManager):
@@ -20,5 +20,3 @@ class FBTA090AlbumSingSurvey(FBTAMainManager):
     #     self.db.get_find_docs_count()
     #     print(f"+++++++++++++++++++ DO THIS {self.db.get_find_docs_count()}")
 
-    def stop_main_condition(self) -> bool:
-        pass

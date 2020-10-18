@@ -9,7 +9,6 @@ STATE = {"value": 0}
 
 USERS = set()
 
-
 def state_event():
     return json.dumps({"type": "state", **STATE})
 
@@ -45,6 +44,7 @@ async def counter(websocket, path):
     await register(websocket)
     try:
         await websocket.send(state_event())
+        print(message)
         async for message in websocket:
             data = json.loads(message)
             if data["action"] == "minus":

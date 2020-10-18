@@ -1,6 +1,6 @@
-from fbta_05_cards_download_worker import FBTACardsDownloadWorker
-from fbta_main_manager import FBTAMainManager
-from fbta_node_master import FBTANodeMaster
+from fbta.fbta_05_cards_download_worker import FBTACardsDownloadWorker
+from fbta.fbta_main_manager import FBTAMainManager
+from fbta.fbta_node_master import FBTANodeMaster
 
 
 class FBTACardsDownloadManager(FBTAMainManager):

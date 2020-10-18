@@ -10,7 +10,7 @@ import re as regex
 from bson import DBRef
 from pymongo import MongoClient
 
-from fbta_log import log
+from fbta.fbta_log import log
 
 
 class FBTA120CountingAlbumPreprocess():
@@ -83,7 +83,7 @@ class FBTA120CountingAlbumPreprocess():
                 data['img-count-start'] = num_old_img
 
                 if str_more_img:
-                    urlx = doc.get('photo-cluster')[0].get('url')
+                    urlx = doc.get('photo-cluster').get('url')
                     ls = self.splitter_url(urlx, int(str_more_img), num_old_img)
 
                     data['split-url'] = ls

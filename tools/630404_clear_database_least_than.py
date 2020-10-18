@@ -37,12 +37,11 @@ if __name__ == '__main__':
         coll_card = db.get_collection('02_card_page')
         num_card = coll_card.estimated_document_count()
 
-        stat_cond = num_card < 1000
-
+        stat_cond = num_card > 0
         cond = (db_name not in except_db_global_list) and (db_name not in except_db_list) and stat_cond
         if cond:
             confirm = input(
                 f"Deleted? {num_card}) {db_name} Enter: 'YES' (case sensitive) for process OR other to cancel\n")
-            if confirm:
+            if confirm == 'YES' or str(confirm).lower() == 'y':
                 client.drop_database(db_name)
                 print(f'({num_card}) {db_name} Deleted')

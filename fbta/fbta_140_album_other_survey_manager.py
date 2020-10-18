@@ -1,8 +1,8 @@
-from fbta_090_album_single_surway_worker import FBTA090AlbumSingSurveyWorker
-from fbta_140_album_other_survey_worker import FBTA140AlbumOtherSurveyWorker
+from fbta.fbta_090_00_album_single_surway_worker import FBTA090AlbumSingSurveyWorker
+from fbta.fbta_140_album_other_survey_worker import FBTA140AlbumOtherSurveyWorker
 
-from fbta_main_manager import FBTAMainManager
-from fbta_node_master import FBTANodeMaster
+from fbta.fbta_main_manager import FBTAMainManager
+from fbta.fbta_node_master import FBTANodeMaster
 
 
 class FBTA140AlbumOtherSurvey(FBTAMainManager):

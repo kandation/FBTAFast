@@ -5,8 +5,8 @@ import re
 import time
 from typing import List, Optional
 
-from fbta_browser_worker_new import FBTAWorkerBrowserS
-from fbta_log import log
+from fbta.fbta_browser_worker_new import FBTAWorkerBrowserS
+from fbta.fbta_log import log
 
 from parsel import Selector
 from urllib.parse import urljoin

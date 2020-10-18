@@ -10,13 +10,13 @@ from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 
-from fbta_browser_constant import FBTABrowserConstant
-from fbta_browser_title import FBTABrowserTitle
-from fbta_configs import FBTAConfigs
-from fbta_driver import FBTADriver
-from fbta_node_master import FBTANodeMaster
-from fbta_settings import FBTASettings
-from fbta_log import log
+from fbta.fbta_browser_constant import FBTABrowserConstant
+from fbta.fbta_browser_title import FBTABrowserTitle
+from fbta.fbta_configs import FBTAConfigs
+from fbta.fbta_driver import FBTADriver
+from fbta.fbta_node_master import FBTANodeMaster
+from fbta.fbta_settings import FBTASettings
+from fbta.fbta_log import log
 
 
 class FBTAWorkerBrowser(FBTABrowserTitle):
@@ -34,8 +34,7 @@ class FBTAWorkerBrowser(FBTABrowserTitle):
 
         self.__test_end_killer = self.__settings.kill_driver_on_end
 
-
-        self.__driver:FBTADriver = self.__start_driver()
+        self.__driver: FBTADriver = self.__start_driver()
 
         self.__use_noscript = True
 
@@ -43,12 +42,15 @@ class FBTAWorkerBrowser(FBTABrowserTitle):
 
         self.__signal = FBTABrowserConstant.SIGNAL_NORMAL_START
 
-
     def start_browser(self):
         if self.__settings.init_node_master_browser:
             self.__driver.add_cookie_from_node_master()
         else:
-            self.__driver.add_cookie_from_file()
+            if self.__settings.json_cookie:
+                self.__driver.add_cookie_from_file_json()
+            else:
+
+                self.__driver.add_cookie_from_file()
 
     def has_driver(self):
         return self.driver is not None
@@ -115,8 +117,6 @@ class FBTAWorkerBrowser(FBTABrowserTitle):
 
             self.driver.refresh()
 
-
-
     def save_cookies(self):
         file_name = self.__settings.dir_cookies + 'fbta_cookies_old.pkl'
         pickle.dump(self.driver.get_cookies(), open(file_name, mode='wb'))
@@ -145,13 +145,9 @@ class FBTAWorkerBrowser(FBTABrowserTitle):
                 print(f':Browser: Random New Name [{self.name}]')
                 self.name = self.__randomString()
 
-
-
-
-
     def goto(self, url, stream=False):
         self.__check_internet_connect()
-        self.__get_secure(url,stream)
+        self.__get_secure(url, stream)
         self.__check_login()
         self.__handle_noscript(url)
 
@@ -174,8 +170,6 @@ class FBTAWorkerBrowser(FBTABrowserTitle):
                 print(f':Browser: [{self.name}] Get method timeout retry={load_time_out_retry}')
                 sleep(30)
                 load_time_out_retry += 1
-
-
 
     def killdriver(self):
         try:
@@ -235,5 +229,3 @@ class FBTAWorkerBrowser(FBTABrowserTitle):
     def login_signal(self):
         self.__check_login()
         return self.__signal
-
-

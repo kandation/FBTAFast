@@ -1,10 +1,10 @@
 import re
 import time
 
-from fbta_configs import FBTAConfigs
-from fbta_global_database_manager import FBTADBManager
-from fbta_settings import FBTASettings
-from fbta_log import log
+from fbta.fbta_configs import FBTAConfigs
+from fbta.fbta_global_database_manager import FBTADBManager
+from fbta.fbta_settings import FBTASettings
+from fbta.fbta_log import log
 
 from typing import List, Optional
 

@@ -1,7 +1,7 @@
-from fbta_110_00_photos_download_worker import FBTA11000PhotosDownloadWorker
+from fbta.fbta_110_00_photos_download_worker import FBTA11000PhotosDownloadWorker
 
-from fbta_main_manager import FBTAMainManager
-from fbta_node_master import FBTANodeMaster
+from fbta.fbta_main_manager import FBTAMainManager
+from fbta.fbta_node_master import FBTANodeMaster
 
 
 class FBTA11000PhotosDownloadManager(FBTAMainManager):

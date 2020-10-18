@@ -9,7 +9,7 @@ from urllib.parse import parse_qs
 
 from pymongo import MongoClient
 
-from fbta_log import log
+from fbta.fbta_log import log
 
 
 class FBTA11001UserInfo:

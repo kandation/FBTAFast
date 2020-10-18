@@ -1,14 +1,14 @@
 from time import sleep
 
 # import fbta_util
-import fbta_util
-from fbta_browser_constant import FBTABrowserConstant
-from fbta_browser_worker_new import FBTAWorkerBrowserS
-from fbta_configs import FBTAConfigs
-from fbta_node_master import FBTANodeMaster
-from fbta_settings import FBTASettings
-from fbta_url import FBTAUrl
-from fbta_log import log
+import fbta.fbta_util
+from fbta.fbta_browser_constant import FBTABrowserConstant
+from fbta.fbta_browser_worker_new import FBTAWorkerBrowserS
+from fbta.fbta_configs import FBTAConfigs
+from fbta.fbta_node_master import FBTANodeMaster
+from fbta.fbta_settings import FBTASettings
+from fbta.fbta_url import FBTAUrl
+from fbta.fbta_log import log
 
 
 class FBTANodeWorker:

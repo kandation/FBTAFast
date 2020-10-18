@@ -1,0 +1,10 @@
+.idea
+*.pytest_cache*
+header_*
+debug_*
+*__pycache__*
+Logs
+*.key
+*.enc
+/cookies
+*.log

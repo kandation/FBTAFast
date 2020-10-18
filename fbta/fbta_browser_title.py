@@ -2,10 +2,10 @@ import datetime
 
 from selenium import webdriver
 
-from fbta_browser_constant import FBTABrowserConstant
+from fbta.fbta_browser_constant import FBTABrowserConstant
 from abc import ABCMeta, abstractmethod
 
-from fbta_log import log
+from fbta.fbta_log import log
 
 
 class FBTABrowserTitle(metaclass=ABCMeta):

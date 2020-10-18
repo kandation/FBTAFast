@@ -5,14 +5,14 @@ import time
 from threading import Thread
 from typing import List, Optional
 from abc import ABCMeta, abstractmethod
-from fbta_difftime import FBTADifftime
+from fbta.fbta_difftime import FBTADifftime
 import pymongo
 from selenium.common.exceptions import WebDriverException
 
-from fbta_node_master import FBTANodeMaster
-from fbta_node_worker import FBTANodeWorker
-from fbta_statistic import FBTAStatistic
-from fbta_log import log
+from fbta.fbta_node_master import FBTANodeMaster
+from fbta.fbta_node_worker import FBTANodeWorker
+from fbta.fbta_statistic import FBTAStatistic
+from fbta.fbta_log import log
 
 
 class FBTAVariableDownload:

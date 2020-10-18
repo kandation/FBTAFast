@@ -9,7 +9,7 @@ from urllib.parse import parse_qs
 
 from pymongo import MongoClient
 
-from fbta_log import log
+from fbta.fbta_log import log
 
 
 class FBTA11001UserInfoAlbum:
@@ -57,16 +57,16 @@ class FBTA11001UserInfoAlbum:
 
         for doc in docs_post:
             try:
-                gx = doc.get('photo-cluster')[0].get('photos')[0]
+                gx = doc.get('photo-cluster').get('photos')[0]
             except:
-                print(doc.get('photo-cluster')[0].get('url'))
+                print(doc.get('photo-cluster').get('url'))
             user_info = self.get_user_info(gx)
             user_current = user_info['user-info']['info']
             if ignore_list and user_current in ignore_list:
                 user_info['user-info']['ignore'] = True
 
             print(user_info)
-            # collection.update({'_id': doc.get('_id')}, {'$set': user_info})
+            collection.update({'_id': doc.get('_id')}, {'$set': user_info})
 
         print('Finished', time() - time_all_start)
 

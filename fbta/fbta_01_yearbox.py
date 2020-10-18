@@ -2,13 +2,13 @@ from typing import List, Optional
 
 from parsel import Selector
 
-from fbta_browser_worker_new import FBTAWorkerBrowserS
-from fbta_node_master import FBTANodeMaster
+from fbta.fbta_browser_worker_new import FBTAWorkerBrowserS
+from fbta.fbta_node_master import FBTANodeMaster
 from pprint import pprint
 import datetime
 from json import dumps, loads
 
-from fbta_log import log
+from fbta.fbta_log import log
 
 
 class FBTAYearBox:
@@ -33,6 +33,7 @@ class FBTAYearBox:
 
     def __findMonthEachYear(self):
         nowMonth_SLN = self.__getPreloadMonth()
+        print(nowMonth_SLN)
         nowYearMonth = self.__scanMonth(nowMonth_SLN)
 
         year_box = self.__findYearBox()
@@ -108,7 +109,7 @@ class FBTAYearBox:
     def __reg_paser(self, month: str):
         import urllib.parse as urlparse
         parsed = urlparse.urlparse(month)
-        return urlparse.parse_qs(parsed.query).get('sectionID')[0]
+        return urlparse.parse_qs(parsed.query).get('section_id')[0]
 
     def __scanMonth(self, data_all_month):
         year_box = []

@@ -50,6 +50,8 @@ class FBTASettings:
 
         self.__userinfo = {}
 
+        self.json_cookie = False
+
         self.__autoInit()
 
         self.__killdriveronend = True
@@ -58,6 +60,28 @@ class FBTASettings:
         self.dir_yearbox = r'./'
 
         self.__ignore_name = -1
+
+        self.description = ''
+
+    def get_json_setting(self):
+        js = {
+            'description': self.description,
+            'run-step': self.test_step,
+            'date-process': self.date_process,
+            'cluster-run': str(datetime.datetime.now()),
+            'cluster-max': self.cluster_num,
+            'dir-name': self.dir_path,
+            'username': self.username
+        }
+        return js
+
+    @property
+    def json_cookie(self) -> bool:
+        return self.__json_cookie
+
+    @json_cookie.setter
+    def json_cookie(self, cond=False):
+        self.__json_cookie = cond
 
     @property
     def run_fast_cluster_info(self):

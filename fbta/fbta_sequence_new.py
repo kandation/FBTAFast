@@ -1,25 +1,26 @@
 import time
 from pprint import pprint
 
-from fbta_04_activity_to_card import FBTAActivityToCardsNew
-from fbta_05_cards_download_manager import FBTACardsDownloadManager
-from fbta_02_clusters import FBTAClusterInfo
-from fbta_06_photos_download_manager import FBTAPhotosDownloadManager
-from fbta_07_dataft import FBTADataft
+from fbta.fbta_04_activity_to_card import FBTAActivityToCardsNew
+from fbta.fbta_05_cards_download_manager import FBTACardsDownloadManager
+from fbta.fbta_02_clusters import FBTAClusterInfo
+from fbta.fbta_06_photos_download_manager import FBTAPhotosDownloadManager
+from fbta.fbta_07_dataft import FBTADataft
+from fbta.fbta_090_01_album_preprocess import FBTA0901MoreAlbumPreProcess
 
-from fbta_110_01_user_info import FBTA11001UserInfo
-from fbta_110_02_user_info_album import FBTA11001UserInfoAlbum
-from fbta_120_00_cal_count_number import FBTA120CountingAlbumPreprocess
-from fbta_140_album_other_survey_manager import FBTA140AlbumOtherSurvey
-from fbta_150_more_album_preprocess import FBTA150MoreAlbumPreProcess
-from fbta_configs import FBTAConfigs
-from fbta_03_history_download_manager import FBTAHistoryDownloadManager
-from fbta_mkdir import FBTAMkdir
-from fbta_node_master import FBTANodeMaster
-from fbta_sequence_func import FBTASequenceFunction
-from fbta_settings import FBTASettings
-from fbta_01_yearbox import FBTAYearBox
-from fbta_log import log
+from fbta.fbta_110_02_user_info import FBTA11001UserInfo
+from fbta.fbta_110_03_user_info_album import FBTA11001UserInfoAlbum
+from fbta.fbta_120_00_cal_count_number import FBTA120CountingAlbumPreprocess
+from fbta.fbta_140_album_other_survey_manager import FBTA140AlbumOtherSurvey
+from fbta.fbta_150_more_album_preprocess import FBTA150MoreAlbumPreProcess
+from fbta.fbta_configs import FBTAConfigs
+from fbta.fbta_03_history_download_manager import FBTAHistoryDownloadManager
+from fbta.fbta_mkdir import FBTAMkdir
+from fbta.fbta_node_master import FBTANodeMaster
+from fbta.fbta_sequence_func import FBTASequenceFunction
+from fbta.fbta_settings import FBTASettings
+from fbta.fbta_01_yearbox import FBTAYearBox
+from fbta.fbta_log import log
 
 
 class FBTASequenceNew(FBTASequenceFunction):
@@ -38,24 +39,26 @@ class FBTASequenceNew(FBTASequenceFunction):
         self._warnningTimeOptimize()
         self.__px0_initDirectory()
 
+        self.__save_information()
 
         step_function = [
             self.__p00_generateMasterNode,
-            self.__p01_processYearBox,
-            self.__p02_processsClustersInfo,
-            self.__p03_cluster_download_activity_all,
-            self.__p04_transfer_activity_to_story_card,
-            self.__p05_cluster_download_story,
+            self.__p01_net_single__year_box,
+            self.__p02_db__single__cal_cluster_info,
+            self.__p03_net_cluster_download_activity_all,
+            self.__p04_db__single__transfer_activity_to_story_card,
+            self.__p05_net_cluster_download_story,
             self.__parse_photo_in_story_trans_to_photo_id_and_data_ft,
             self.__p07_create_album_no_dup,
             self.__p08_create_photo_tank_no_dup,
             self.__p09_download_first_page_album,
+            self.__p09_01_parse_first_page_to_photo,
             self.__p10_create_photo_tank_from_album,
             self.__p12_download_story_as_chrome,
             self.__p11_02_user_info_album_with_chrome_header,
             self.__p12_counting_album_preprocess,
-            self.__p140_00_cluster_download_more_album_page,
-            self.__p150_00_parse_more_album_page_and_add_photo_to_tank,
+            # self.__p140_00_cluster_download_more_album_page,
+            # self.__p150_00_parse_more_album_page_and_add_photo_to_tank,
             self.__p11_01_user_info_make_all_ignore_case,
             self.__p11_processEazyPhotoDownload,
             # FBTA COMPLETE YOU GET ALL PHOTO FROM YOU LIKE
@@ -71,7 +74,7 @@ class FBTASequenceNew(FBTASequenceFunction):
             self._showFinishedProcessEndNotify(index)
 
         print('ENDT$EST')
-        exit()
+        
 
     def __px0_initDirectory(self):
         self.__mkdirClass = FBTAMkdir(self._settings, self._configs)
@@ -81,51 +84,55 @@ class FBTASequenceNew(FBTASequenceFunction):
         self.__node_master = FBTANodeMaster(self._settings, self._configs)
         self.__node_master.start()
 
-    def __p01_processYearBox(self):
+    def __p01_net_single__year_box(self):
         self.__node_year_box = FBTAYearBox(self.__node_master)
         self.__node_year_box.run()
 
-    def __p02_processsClustersInfo(self):
+    def __p02_db__single__cal_cluster_info(self):
         self.__node_cluster_info = FBTAClusterInfo(self._settings, self._configs, self.__node_year_box)
         self.__node_cluster_info.run()
 
-    def __p03_cluster_download_activity_all(self):
+    def __p03_net_cluster_download_activity_all(self):
         # Step01 Download Activity
         dl = FBTAHistoryDownloadManager(self.__node_master,
                                         self.__node_cluster_info.clusters)
         dl.main()
 
-    def __p04_transfer_activity_to_story_card(self):
+    def __p04_db__single__transfer_activity_to_story_card(self):
         analysis = FBTAActivityToCardsNew(self._settings, self._configs)
         analysis.main()
 
-    def __p05_cluster_download_story(self):
+    def __p05_net_cluster_download_story(self):
         order = FBTACardsDownloadManager(self.__node_master)
         order.main()
 
     def __parse_photo_in_story_trans_to_photo_id_and_data_ft(self):
-        import fbta_060_00_album_parse
-        fbta_060_00_album_parse.main(self.__node_master.settings.db_name)
+        import fbta.fbta_060_00_album_parse
+        fbta.fbta_060_00_album_parse.main(self.__node_master.settings.db_name)
 
     def __p09_download_first_page_album(self):
-        from fbta_090_album_single_surway_manager import FBTA090AlbumSingSurvey
+        from fbta.fbta_090_00_album_single_surway_manager import FBTA090AlbumSingSurvey
         album_surway = FBTA090AlbumSingSurvey(self.__node_master)
         album_surway.main()
 
+    def __p09_01_parse_first_page_to_photo(self):
+        album_surway = FBTA0901MoreAlbumPreProcess()
+        album_surway.main(self.__node_master.settings.db_name)
+
     def __p07_create_album_no_dup(self):
-        import fbta_070_00_create_no_duplicate_album
-        fbta_070_00_create_no_duplicate_album.main(self.__node_master.settings.db_name)
+        import fbta.fbta_070_00_create_no_duplicate_album
+        fbta.fbta_070_00_create_no_duplicate_album.main(self.__node_master.settings.db_name)
 
     def __p08_create_photo_tank_no_dup(self):
-        import fbta_080_00_create_no_duplicate_photo
-        fbta_080_00_create_no_duplicate_photo.main(self.__node_master.settings.db_name)
+        import fbta.fbta_080_00_create_no_duplicate_photo
+        fbta.fbta_080_00_create_no_duplicate_photo.main(self.__node_master.settings.db_name)
 
     def __p10_create_photo_tank_from_album(self):
-        import fbta_100_00_create_photo_from_album
-        fbta_100_00_create_photo_from_album.main(self.__node_master.settings.db_name)
+        import fbta.fbta_100_00_create_photo_from_album
+        fbta.fbta_100_00_create_photo_from_album.main(self.__node_master.settings.db_name)
 
     def __p11_processEazyPhotoDownload(self):
-        from fbta_110_00_photos_download_manager import FBTA11000PhotosDownloadManager
+        from fbta.fbta_110_00_photos_download_manager import FBTA11000PhotosDownloadManager
         dl = FBTA11000PhotosDownloadManager(self.__node_master)
         dl.main()
 
@@ -154,3 +161,10 @@ class FBTASequenceNew(FBTASequenceFunction):
     def __p150_00_parse_more_album_page_and_add_photo_to_tank(self):
         user_info = FBTA150MoreAlbumPreProcess()
         user_info.main(self.__node_master.settings.db_name)
+
+    def __save_information(self):
+        from pymongo import  MongoClient
+        client = MongoClient()
+        db = client.get_database(self._settings.db_name)
+        coll = db.get_collection('information')
+        coll.insert_one(self._settings.get_json_setting())

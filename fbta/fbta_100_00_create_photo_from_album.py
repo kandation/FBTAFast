@@ -1,7 +1,7 @@
 from parsel import Selector
 from pymongo import MongoClient
 from urllib.parse import unquote
-import fbta_log
+import fbta.fbta_log as fbta_log
 # import bson
 import re as regex
 from bson import DBRef
@@ -28,7 +28,7 @@ def main(db_name):
     coll_album = db.get_collection('98_album_no_duplicate')
     coll_photo = db.get_collection('99_photos_tank')
 
-    key = {'photo-cluster.0.is-more': ''}
+    key = {'photo-cluster.is-more': ''}
     docs_post = coll_album.find(key)
 
     photos_list = {}
@@ -37,7 +37,7 @@ def main(db_name):
     for doc in docs_post:
         src = DBRef(coll_album.name, doc.get('_id'), db.name)
         data_insert = {}
-        photo_db_list = doc['photo-cluster'][0]['photos']
+        photo_db_list = doc['photo-cluster']['photos']
         aid = doc['aid']
         for pl in photo_db_list:
             str_lnk = ''.join(pl)
@@ -50,14 +50,14 @@ def main(db_name):
                 pass
             print(photo_fbid, pl)
 
-            # data_insert['_id'] = ObjectId()
+            data_insert['_id'] = ObjectId()
             data_insert['photo_id'] = photo_fbid
             data_insert['aid'] = aid
             data_insert['type'] = 'album2photo'
             data_insert['url'] = str_lnk
             data_insert['ref'] = src
 
-            # coll_photo.insert_one(data_insert)
+            coll_photo.insert_one(data_insert)
 
         fbta_log.show_counter(counter, 1000)
         counter += 1

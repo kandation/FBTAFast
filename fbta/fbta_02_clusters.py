@@ -1,12 +1,12 @@
 from pprint import pprint
 
-from fbta_configs import FBTAConfigs
-from fbta_global_database_manager import FBTADBManager
-from fbta_settings import FBTASettings
+from fbta.fbta_configs import FBTAConfigs
+from fbta.fbta_global_database_manager import FBTADBManager
+from fbta.fbta_settings import FBTASettings
 from datetime import datetime
 
-from fbta_01_yearbox import FBTAYearBox
-from fbta_log import log
+from fbta.fbta_01_yearbox import FBTAYearBox
+from fbta.fbta_log import log
 
 
 class FBTAClusterInfo:

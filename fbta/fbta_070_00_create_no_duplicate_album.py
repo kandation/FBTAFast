@@ -1,7 +1,7 @@
 from parsel import Selector
 from pymongo import MongoClient
 from urllib.parse import unquote
-import fbta_log
+import fbta.fbta_log as fbta_log
 from bson import DBRef, ObjectId
 
 fb_url_m = 'https://m.facebook.com/'

@@ -10,11 +10,11 @@ from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 
-from fbta_browser_constant import FBTABrowserConstant
-from fbta_browser_title import FBTABrowserTitle
-from fbta_configs import FBTAConfigs
-from fbta_settings import FBTASettings
-from fbta_log import log
+from fbta.fbta_browser_constant import FBTABrowserConstant
+from fbta.fbta_browser_title import FBTABrowserTitle
+from fbta.fbta_configs import FBTAConfigs
+from fbta.fbta_settings import FBTASettings
+from fbta.fbta_log import log
 from abc import ABCMeta, abstractmethod
 
 

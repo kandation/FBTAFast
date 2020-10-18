@@ -1,10 +1,10 @@
-from fbta_02_clusters import FBTAClusterInfo
-from fbta_06_photos_download_worker import FBTAPhotosDownloadWorker
-from fbta_global_database_manager import FBTADBManager
-from fbta_03_history_download_method import FBTAHistoryDownloaderMethod
-from fbta_03_history_download_worker import FBTAHistoryDownloadWorker
-from fbta_main_manager import FBTAMainManager
-from fbta_node_master import FBTANodeMaster
+from fbta.fbta_02_clusters import FBTAClusterInfo
+from fbta.fbta_06_photos_download_worker import FBTAPhotosDownloadWorker
+from fbta.fbta_global_database_manager import FBTADBManager
+from fbta.fbta_03_history_download_method import FBTAHistoryDownloaderMethod
+from fbta.fbta_03_history_download_worker import FBTAHistoryDownloadWorker
+from fbta.fbta_main_manager import FBTAMainManager
+from fbta.fbta_node_master import FBTANodeMaster
 
 
 class FBTAPhotosDownloadManager(FBTAMainManager):
